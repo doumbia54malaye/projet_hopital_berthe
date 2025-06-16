@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Médicale - {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'gestion/style.css' %}">
+</head>
+<body>
+    <script>
+        // Définition du chemin de base pour l'application
+        const BASE_PATH = "{% url 'dashboard' %}".replace('/dashboard/', '');
+        const LOGIN_URL = "{% url 'login' %}";
+        const LOGOUT_URL = "{% url 'logout' %}";
+        const ADD_PATIENT_URL = "{% url 'add_patient' %}";
+        const ADD_DOCTOR_URL = "{% url 'add_doctor' %}";
+        const ADD_APPOINTMENT_URL = "{% url 'add_appointment' %}";
+        const GET_SLOTS_URL = "{% url 'get_slots' %}";
+        const GET_PATIENTS_URL = "{% url 'patients' %}";
+        const GET_DOCTORS_URL = "{% url 'doctors' %}";
+    </script>
+    {% if user.is_authenticated %}
+    <div id="app-container">
+        <div id="sidebar">
+            <div id="logo">MediGestion</div>
+            <ul id="menu">
+                <li><a href="{% url 'dashboard' %}" class="menu-item" data-target="dashboard">Tableau de bord</a></li>
+                <li><a href="{% url 'patients' %}" class="menu-item" data-target="patients">Patients</a></li>
+                <li><a href="{% url 'doctors' %}" class="menu-item" data-target="doctors">Médecins</a></li>
+                <li><a href="{% url 'appointments' %}" class="menu-item" data-target="appointments">Rendez-vous</a></li>
+                <li><a href="{% url 'calendar' %}" class="menu-item" data-target="calendar">Calendrier</a></li>
+            </ul>
+        </div>
+
+        <div id="main-content">
+            <div id="header">
+                <h1 id="page-title">{% block page_title %}{% endblock %}</h1>
+            </div>
+
+            <div class="page-content" id="dashboard-content">
+                {% block dashboard_content %}{% endblock %}
+            </div>
+
+            <div class="page-content" id="patients-content">
+                {% block patients_content %}{% endblock %}
+            </div>
+
+            <div class="page-content" id="doctors-content">
+                {% block doctors_content %}{% endblock %}
+            </div>
+
+            <div class="page-content" id="appointments-content">
+                {% block appointments_content %}{% endblock %}
+            </div>
+
+            <div class="page-content" id="calendar-content">
+                {% block calendar_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div id="login-page">
+        {% include 'gestion/login.html' %}
+    </div>
+    {% endif %}
+
+    <div id="add-patient-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Ajouter un Patient</h2>
+        <form id="add-patient-form">
+            {% csrf_token %}
+            <input type="text" name="patient-firstname" placeholder="Prénom" required>
+            <input type="text" name="patient-lastname" placeholder="Nom" required>
+            <input type="tel" name="patient-phone" placeholder="Téléphone">
+            <select name="patient-gender">
+                <option value="M">Homme</option>
+                <option value="F">Femme</option>
+            </select>
+            <input type="date" name="patient-birthdate">
+            <textarea name="patient-address" placeholder="Adresse"></textarea>
+            <button type="submit">Enregistrer</button>
+        </form>
+    </div>
+</div>
+
+<div id="add-doctor-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Ajouter un Médecin</h2>
+        <form id="add-doctor-form">
+            {% csrf_token %}
+            <input type="text" name="doctor-firstname" placeholder="Prénom" required>
+            <input type="text" name="doctor-lastname" placeholder="Nom" required>
+            <input type="tel" name="doctor-phone" placeholder="Téléphone">
+            <input type="text" name="doctor-specialty" placeholder="Spécialité" required>
+
+            <h3>Disponibilités</h3>
+            <div id="doctor-availability">
+                {# C'EST LA LIGNE CLÉ MODIFIÉE : utilisez la variable days_of_week #}
+                {% for day in days_of_week %}
+                <div class="day-availability">
+                    <label>
+                        <input type="checkbox" name="avail-{{ day }}">
+                        {{ day|capfirst }}
+                    </label>
+                    <input type="time" name="{{ day }}-start" disabled>
+                    <input type="time" name="{{ day }}-end" disabled>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="submit">Enregistrer</button>
+        </form>
+    </div>
+</div>
+
+<div id="add-appointment-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Prendre un Rendez-vous</h2>
+        <form id="add-appointment-form">
+            {% csrf_token %}
+            <select id="appointment-patient" name="appointment-patient" required>
+                <option value="">Sélectionnez un patient</option>
+            </select>
+
+            <select id="appointment-doctor" name="appointment-doctor" required>
+                <option value="">Sélectionnez un médecin</option>
+            </select>
+
+            <input type="date" id="appointment-date" name="appointment-date" required>
+            <textarea name="appointment-reason" placeholder="Motif de consultation"></textarea>
+
+            <div id="time-slots-container">
+                <h3>Créneaux disponibles</h3>
+                <div id="available-slots"></div>
+                <input type="hidden" id="selected-slot" name="time-slot">
+            </div>
+
+            <button type="submit">Confirmer</button>
+        </form>
+    </div>
+</div>
+<script src="{% static 'gestion/script.js' %}"></script>
+</body>
+</html>

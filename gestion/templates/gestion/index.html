@@ -1,0 +1,673 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Gestion Clinique</title>
+    <link rel="stylesheet" href="{% static 'gestion/fichier1.css' %}">
+  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    </head>
+<body>
+
+
+</div>
+    <div id="app-container" class="app-container" style="display: none;">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div id="user-avatar" class="user-avatar">U</div>
+                <span id="username-display" class="username">Utilisateur</span>
+            </div>
+            <nav class="sidebar-menu">
+                <ul>
+                    <li><a href="#" class="menu-item active" data-target="dashboard"><i class="fas fa-home"></i> Tableau de bord</a></li>
+                    <li><a href="#" class="menu-item" data-target="patients"><i class="fas fa-user-injured"></i> Patients</a></li>
+                    <li><a href="#" class="menu-item" data-target="doctors"><i class="fas fa-user-md"></i> Médecins</a></li>
+                    <li><a href="#" class="menu-item" data-target="appointments"><i class="fas fa-calendar-check"></i> Rendez-vous</a></li>
+                    <li><a href="#" class="menu-item" data-target="calendar"><i class="fas fa-calendar-alt"></i> Calendrier</a></li>
+                    <li><a href="#" id="logout-btn" class="menu-item"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h1 id="page-title">Tableau de bord</h1>
+                <div class="header-actions">
+                    <input type="text" id="quick-search" placeholder="Recherche rapide...">
+                    <button id="quick-search-btn" class="btn btn-primary"><i class="fas fa-search"></i> Rechercher</button>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <div id="quick-search-results" class="quick-search-results">
+                    </div>
+
+                <section id="dashboard-content" class="page-content active">
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <h3>Rendez-vous Aujourd'hui</h3>
+                            <p id="today-appointments">0</p>
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Médecins Disponibles</h3>
+                            <p id="available-doctors">0</p>
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Patients</h3>
+                            <p id="total-patients">0</p>
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Rendez-vous à Venir</h3>
+                            <p id="upcoming-appointments">0</p>
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                    </div>
+
+                    <h3>Prochains Rendez-vous</h3>
+                    <div class="table-responsive">
+                        <table id="upcoming-appointments-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Heure</th>
+                                    <th>Patient</th>
+                                    <th>Médecin</th>
+                                    <th>Motif</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="patients-content" class="page-content">
+                    <div class="content-header">
+                        <h2>Gestion des Patients</h2>
+                        <div class="actions">
+                            <input type="text" id="patient-search" placeholder="Rechercher un patient...">
+                            <button id="patient-search-btn" class="btn btn-primary"><i class="fas fa-search"></i> Rechercher</button>
+                            <button id="add-patient-btn" class="btn btn-success"><i class="fas fa-plus"></i> Ajouter Patient</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="patients-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nom</th>
+                                    <th>Prénom</th>
+                                    <th>Téléphone</th>
+                                    <th>Sexe</th>
+                                    <th>Date de Naissance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="doctors-content" class="page-content">
+                    <div class="content-header">
+                        <h2>Gestion des Médecins</h2>
+                        <div class="actions">
+                            <button id="add-doctor-btn" class="btn btn-success"><i class="fas fa-plus"></i> Ajouter Médecin</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="doctors-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nom</th>
+                                    <th>Prénom</th>
+                                    <th>Spécialité</th>
+                                    <th>Disponibilités</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="appointments-content" class="page-content">
+                    <div class="content-header">
+                        <h2>Gestion des Rendez-vous</h2>
+                        <div class="actions">
+                            <button id="add-appointment-btn" class="btn btn-success btn-animated neon-btn">
+                                <span class="btn-icon"><i class="fas fa-plus"></i></span>
+                                <span class="btn-text">Prendre Rendez-vous</span>
+                                <span class="btn-ripple"></span>
+                            </button>
+                            <style>
+                            /* Neon glowing button style */
+                            .neon-btn {
+                                background: linear-gradient(90deg, #38c6d9 0%, #4f8cff 100%);
+                                color: #fff;
+                                box-shadow: 0 0 8px #38c6d9, 0 0 16px #4f8cff;
+                                border: none;
+                                border-radius: 8px;
+                                position: relative;
+                                overflow: hidden;
+                                font-weight: 600;
+                                letter-spacing: 0.03em;
+                                transition: box-shadow 0.22s, transform 0.18s, background 0.18s;
+                            }
+                            .neon-btn:hover {
+                                box-shadow: 0 0 24px #38c6d9, 0 0 48px #4f8cff;
+                                background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+                                transform: scale(1.06) translateY(-2px);
+                            }
+                            .neon-btn:active {
+                                box-shadow: 0 0 8px #38c6d9, 0 0 16px #4f8cff;
+                                transform: scale(0.97);
+                            }
+                            .neon-btn .btn-icon {
+                                display: inline-block;
+                                margin-right: 8px;
+                                transition: transform 0.25s cubic-bezier(.23,1.12,.32,1);
+                                filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 6px #38c6d9);
+                            }
+                            .neon-btn:hover .btn-icon {
+                                transform: rotate(180deg) scale(1.2);
+                                filter: drop-shadow(0 0 8px #4f8cff);
+                            }
+                            .neon-btn .btn-text {
+                                position: relative;
+                                z-index: 2;
+                                text-shadow: 0 0 4px #fff, 0 0 8px #38c6d9;
+                            }
+                            .neon-btn .btn-ripple {
+                                position: absolute;
+                                border-radius: 50%;
+                                transform: scale(0);
+                                background: rgba(56,198,217,0.18);
+                                opacity: 0.7;
+                                pointer-events: none;
+                                width: 100px;
+                                height: 100px;
+                                left: 50%;
+                                top: 50%;
+                                transition: transform 0.4s, opacity 0.8s;
+                                z-index: 1;
+                            }
+                            .neon-btn:active .btn-ripple {
+                                transform: scale(2.5);
+                                opacity: 0;
+                                transition: 0s;
+                            }
+                            /* Pulse animation for neon effect */
+                            @keyframes neonPulse {
+                                0%, 100% {
+                                    box-shadow: 0 0 8px #38c6d9, 0 0 16px #4f8cff;
+                                }
+                                50% {
+                                    box-shadow: 0 0 24px #38c6d9, 0 0 48px #4f8cff;
+                                }
+                            }
+                            .neon-btn {
+                                animation: neonPulse 2s infinite;
+                            }
+                            </style>
+                            <script>
+                            // Animation effet "ripple" sur le bouton
+                            document.getElementById('add-appointment-btn').addEventListener('click', function(e) {
+                                var ripple = this.querySelector('.btn-ripple');
+                                ripple.style.left = (e.offsetX - 50) + 'px';
+                                ripple.style.top = (e.offsetY - 50) + 'px';
+                                ripple.style.transform = 'scale(0)';
+                                ripple.style.opacity = '0.7';
+                                void ripple.offsetWidth; // reflow
+                                ripple.style.transform = 'scale(2.5)';
+                                ripple.style.opacity = '0';
+                            });
+                            </script>
+                        </div>
+                    </div>
+                    <div class="tabs">
+                        <button class="tab active" data-tab="today">Aujourd'hui</button>
+                        <button class="tab" data-tab="upcoming">À venir</button>
+                        <button class="tab" data-tab="all">Tous</button>
+                    </div>
+
+                    <div id="today-tab" class="tab-content active">
+                        <h3>Rendez-vous d'aujourd'hui</h3>
+                        <div class="table-responsive today-appointments-table-container" style="background: linear-gradient(90deg, #e3f6fc 0%, #f7faff 100%); border-radius: 18px; box-shadow: 0 4px 18px rgba(56,198,217,0.10); padding: 24px 18px; margin-bottom: 24px;">
+                            <table id="today-appointments-table" class="data-table" style="background: #fff; border-radius: 12px; overflow: hidden;">
+                                <thead style="background: linear-gradient(90deg, #38c6d9 0%, #4f8cff 100%); color: #fff;"></thead>
+                                    <tr>
+                                        <th style="padding: 12px 8px;">Heure</th>
+                                        <th style="padding: 12px 8px;">Patient</th>
+                                        <th style="padding: 12px 8px;">Médecin</th>
+                                        <th style="padding: 12px 8px;">Motif</th>
+                                        <th style="padding: 12px 8px;">Statut</th>
+                                        <th style="padding: 12px 8px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Les rendez-vous du jour seront affichés ici dynamiquement -->
+                                </tbody>
+                            </table>
+                            <style>
+                                .today-appointments-table-container {
+                                    transition: box-shadow 0.18s;
+                                }
+                                .today-appointments-table-container:hover {
+                                    box-shadow: 0 8px 32px rgba(56,198,217,0.18);
+                                }
+                                #today-appointments-table th, #today-appointments-table td {
+                                    text-align: center;
+                                    font-size: 1.05em;
+                                }
+                                #today-appointments-table tbody tr {
+                                    transition: background 0.18s;
+                                }
+                                #today-appointments-table tbody tr:hover {
+                                    background: #e3f6fc;
+                                }
+                                #today-appointments-table td {
+                                    padding: 10px 8px;
+                                }
+                                #today-appointments-table .status {
+                                    padding: 4px 10px;
+                                    border-radius: 8px;
+                                    font-weight: 600;
+                                    font-size: 0.97em;
+                                }
+                                #today-appointments-table .status.confirme {
+                                    background: #d1f7e7;
+                                    color: #1ca97c;
+                                }
+                                #today-appointments-table .status.en-attente {
+                                    background: #fff4d1;
+                                    color: #e6a100;
+                                }
+                                #today-appointments-table .status.annule {
+                                    background: #ffe1e1;
+                                    color: #e14c4c;
+                                }
+                                #today-appointments-table .action-btn {
+                                    border: none;
+                                    background: none;
+                                    cursor: pointer;
+                                    margin: 0 2px;
+                                    font-size: 1.1em;
+                                    color: #38c6d9;
+                                    transition: color 0.18s, transform 0.18s;
+                                }
+                                #today-appointments-table .action-btn:hover {
+                                    color: #4f8cff;
+                                    transform: scale(1.18);
+                                }
+                            </style>
+                        </div>
+                    </div>
+                    <div id="upcoming-tab" class="tab-content">
+                        <h3>Rendez-vous à venir</h3>
+                        <div class="table-responsive">
+                            <table id="upcoming-appointments-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Heure</th>
+                                        <th>Patient</th>
+                                        <th>Médecin</th>
+                                        <th>Motif</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="all-tab" class="tab-content">
+                        <h3>Tous les rendez-vous</h3>
+                        <div class="table-responsive">
+                            <table id="all-appointments-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Heure</th>
+                                        <th>Patient</th>
+                                        <th>Médecin</th>
+                                        <th>Motif</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="calendar-content" class="page-content">
+                    <div class="calendar-header">
+                        <button id="prev-month" class="btn btn-secondary">&lt;</button>
+                        <h2 id="current-month"></h2>
+                        <button id="next-month" class="btn btn-secondary">&gt;</button>
+                    </div>
+                    <div class="calendar-grid-container">
+                        <table id="appointment-calendar" class="calendar-table">
+                            <thead>
+                                <tr>
+                                    <th>Lun</th>
+                                    <th>Mar</th>
+                                    <th>Mer</th>
+                                    <th>Jeu</th>
+                                    <th>Ven</th>
+                                    <th>Sam</th>
+                                    <th>Dim</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="add-patient-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Ajouter/Modifier Patient</h2>
+            <form id="add-patient-form">
+                <div class="input-group">
+                    <label for="patient-lastname">Nom</label>
+                    <input type="text" id="patient-lastname" required>
+                </div>
+                <div class="input-group">
+                    <label for="patient-firstname">Prénom</label>
+                    <input type="text" id="patient-firstname" required>
+                </div>
+                <div class="input-group">
+                    <label for="patient-phone">Téléphone</label>
+                    <input type="tel" id="patient-phone" required>
+                </div>
+                <div class="input-group">
+                    <label for="patient-gender">Sexe</label>
+                    <select id="patient-gender" required>
+                        <option value="">Sélectionner</option>
+                        <option value="M">Masculin</option>
+                        <option value="F">Féminin</option>
+                        <option value="O">Autre</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="patient-birthdate">Date de Naissance</label>
+                    <input type="date" id="patient-birthdate" required>
+                </div>
+                <div class="input-group">
+                    <label for="patient-address">Adresse</label>
+                    <textarea id="patient-address"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="save-patient-btn" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-danger close-modal">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="view-patient-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Détails du Patient</h2>
+            <div id="patient-details">
+                </div>
+            <h3>Rendez-vous du Patient</h3>
+            <div class="table-responsive">
+                <table id="patient-appointments-table" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Médecin</th>
+                            <th>Motif</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary close-modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-doctor-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Ajouter/Modifier Médecin</h2>
+            <form id="add-doctor-form">
+                <div class="input-group">
+                    <label for="doctor-lastname">Nom</label>
+                    <input type="text" id="doctor-lastname" required>
+                </div>
+                <div class="input-group">
+                    <label for="doctor-firstname">Prénom</label>
+                    <input type="text" id="doctor-firstname" required>
+                </div>
+                <div class="input-group">
+                    <label for="doctor-specialty">Spécialité</label>
+                    <input type="text" id="doctor-specialty" required>
+                </div>
+                <div class="input-group">
+                    <label for="doctor-phone">Téléphone</label>
+                    <input type="tel" id="doctor-phone">
+                </div>
+                <div class="input-group">
+                    <label>Disponibilités</label>
+                    <div id="doctor-availability" class="availability-grid">
+                        <div class="availability-day">
+                            <input type="checkbox" id="avail-lundi" value="Lundi">
+                            <label for="avail-lundi">Lundi</label>
+                            <input type="time" name="start-time" disabled> - <input type="time" name="end-time" disabled>
+                        </div>
+                        <div class="availability-day">
+                            <input type="checkbox" id="avail-mardi" value="Mardi">
+                            <label for="avail-mardi">Mardi</label>
+                            <input type="time" name="start-time" disabled> - <input type="time" name="end-time" disabled>
+                        </div>
+                        <div class="availability-day">
+                            <input type="checkbox" id="avail-mercredi" value="Mercredi">
+                            <label for="avail-mercredi">Mercredi</label>
+                            <input type="time" name="start-time" disabled> - <input type="time" name="end-time" disabled>
+                        </div>
+                        <div class="availability-day">
+                            <input type="checkbox" id="avail-jeudi" value="Jeudi">
+                            <label for="avail-jeudi">Jeudi</label>
+                            <input type="time" name="start-time" disabled> - <input type="time" name="end-time" disabled>
+                        </div>
+                        <div class="availability-day">
+                            <input type="checkbox" id="avail-vendredi" value="Vendredi">
+                            <label for="avail-vendredi">Vendredi</label>
+                            <input type="time" name="start-time" disabled> - <input type="time" name="end-time" disabled>
+                        </div>
+                        <div class="availability-day">
+                            <input type="checkbox" id="avail-samedi" value="Samedi">
+                            <label for="avail-samedi">Samedi</label>
+                            <input type="time" name="start-time" disabled> - <input type="time" name="end-time" disabled>
+                        </div>
+                        <div class="availability-day">
+                            <input type="checkbox" id="avail-dimanche" value="Dimanche">
+                            <label for="avail-dimanche">Dimanche</label>
+                            <input type="time" name="start-time" disabled> - <input type="time" name="end-time" disabled>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="save-doctor-btn" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-danger close-modal">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-appointment-modal" class="modal modal-right">
+        <div class="modal-content slide-in-right">
+            <span class="close">&times;</span>
+            <h2>Prendre/Modifier Rendez-vous</h2>
+            <form id="add-appointment-form">
+                <div class="input-group">
+                    <label for="appointment-patient">Patient</label>
+                    <select id="appointment-patient" required>
+                        <option value="">Sélectionner un patient</option>
+                        </select>
+                </div>
+                <div class="input-group">
+                    <label for="appointment-doctor">Médecin</label>
+                    <select id="appointment-doctor" required>
+                        <option value="">Sélectionner un médecin</option>
+                        </select>
+                </div>
+                <div class="input-group">
+                    <label for="appointment-date">Date</label>
+                    <input type="date" id="appointment-date" required>
+                </div>
+                <div class="input-group">
+                    <label>Créneaux disponibles</label>
+                    <div id="time-slots" class="time-slots-grid">
+                        </div>
+                </div>
+                <div class="input-group">
+                    <label for="appointment-reason">Motif du Rendez-vous</label>
+                    <textarea id="appointment-reason" required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="save-appointment-btn" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-danger close-modal">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="view-appointment-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Détails du Rendez-vous</h2>
+            <div id="appointment-details">
+                </div>
+            <div class="modal-actions">
+                <button type="button" id="cancel-appointment-btn" class="btn btn-danger">Annuler le Rendez-vous</button>
+                <button type="button" class="btn btn-secondary close-modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'gestion/fichier2.js' %}"></script>
+    <script src="{% static 'gestion/fichier3.js' %}"></script>
+    <style>
+/* ...existing code... */
+.modal.modal-right {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    top: 0; right: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.35);
+    justify-content: flex-end;
+    align-items: stretch;
+}
+.modal.modal-right .modal-content {
+    height: 100vh;
+    border-radius: 0;
+    max-width: 420px;
+    width: 100%;
+    margin: 0;
+    box-shadow: -2px 0 16px rgba(0,0,0,0.13);
+    position: relative;
+    background: #fff;
+    overflow-y: auto;
+}
+.slide-in-right {
+    animation: slideInRight 0.45s cubic-bezier(.23,1.12,.32,1) both;
+}
+@keyframes slideInRight {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+.btn-animated {
+    transition: transform 0.18s cubic-bezier(.23,1.12,.32,1), box-shadow 0.18s, background 0.18s;
+    box-shadow: 0 2px 8px rgba(56,198,217,0.10);
+    position: relative;
+    overflow: hidden;
+}
+.btn-animated:hover {
+    transform: scale(1.07) translateY(-2px);
+    box-shadow: 0 6px 24px rgba(56,198,217,0.18);
+    background: linear-gradient(90deg, #38c6d9 0%, #4f8cff 100%);
+}
+.btn-animated:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(56,198,217,0.10);
+}
+.btn-animated::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 0; height: 0;
+    background: rgba(56,198,217,0.18);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s cubic-bezier(.23,1.12,.32,1), height 0.3s cubic-bezier(.23,1.12,.32,1), opacity 0.3s;
+    opacity: 0;
+    pointer-events: none;
+}
+.btn-animated:active::after {
+    width: 180%;
+    height: 400%;
+    opacity: 1;
+    transition: 0s;
+}
+</style>
+<script>
+// ...existing code...
+// Ouvre la modale rendez-vous à droite avec animation
+document.getElementById('add-appointment-btn').onclick = function() {
+    var modal = document.getElementById('add-appointment-modal');
+    var content = modal.querySelector('.modal-content');
+    modal.style.display = 'flex';
+    content.classList.remove('slide-in-right'); // reset animation
+    void content.offsetWidth; // trigger reflow
+    content.classList.add('slide-in-right');
+};
+// Ferme la modale
+document.querySelectorAll('#add-appointment-modal .close, #add-appointment-modal .close-modal').forEach(function(btn) {
+    btn.onclick = function() {
+        document.getElementById('add-appointment-modal').style.display = 'none';
+    };
+});
+// Ferme la modale si on clique en dehors
+window.addEventListener('click', function(event) {
+    var modal = document.getElementById('add-appointment-modal');
+    if (event.target === modal) {
+        modal.style.display = "none";
+    }
+});
+// ...existing code...
+</script>
+<!-- ...existing code... -->

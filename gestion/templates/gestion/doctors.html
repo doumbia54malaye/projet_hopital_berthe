@@ -1,0 +1,233 @@
+{% extends "gestion/base.html" %}
+{% block title %}Gestion des Médecins{% endblock %}
+{% block page_title %}Gestion des Médecins{% endblock %}
+
+{% block doctors_content %}
+<style>
+#add-doctor-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.55);
+    justify-content: center;
+    align-items: center;
+}
+#add-doctor-modal .modal-content {
+    background: #fff;
+    border-radius: 14px;
+    padding: 36px 32px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    position: relative;
+    max-width: 500px;
+    margin: auto;
+}
+.btn-doctor-creative {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 34px;
+    font-size: 1.13rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+    border: none;
+    border-radius: 30px;
+    box-shadow: 0 4px 18px rgba(56,198,217,0.13), 0 1.5px 8px rgba(79,140,255,0.10);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.22s, box-shadow 0.22s, transform 0.18s;
+    outline: none;
+    letter-spacing: 0.5px;
+    z-index: 1;
+}
+.btn-doctor-creative .btn-icon {
+    font-size: 1.2em;
+    transition: transform 0.32s cubic-bezier(.23,1.12,.32,1);
+    display: flex;
+    align-items: center;
+}
+.btn-doctor-creative:hover .btn-icon {
+    transform: rotate(-20deg) scale(1.18);
+}
+.btn-doctor-creative .btn-text {
+    position: relative;
+    z-index: 2;
+}
+.btn-doctor-creative::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: linear-gradient(120deg, #38c6d9 0%, #4f8cff 100%);
+    opacity: 0;
+    transition: opacity 0.22s;
+    z-index: 0;
+    border-radius: 30px;
+}
+.btn-doctor-creative:hover::before {
+    opacity: 0.18;
+}
+.btn-doctor-creative:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(56,198,217,0.10);
+}
+.btn-doctor-creative .btn-ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    background: rgba(56,198,217,0.18);
+    opacity: 0.7;
+    pointer-events: none;
+    width: 120px;
+    height: 120px;
+    left: 50%;
+    top: 50%;
+    transition: transform 0.4s, opacity 0.8s;
+    z-index: 1;
+}
+.btn-doctor-creative:active .btn-ripple {
+    transform: scale(2.5);
+    opacity: 0;
+    transition: 0s;
+}
+</style>
+
+<div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
+    <button id="add-doctor-btn" class="btn-doctor-creative">
+        <span class="btn-icon"><i class="fas fa-user-md"></i></span>
+        <span class="btn-text">Ajouter un médecin</span>
+        <span class="btn-ripple"></span>
+    </button>
+    <script>
+    // Animation effet "ripple" sur le bouton
+    document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('add-doctor-btn');
+        var ripple = btn.querySelector('.btn-ripple');
+        btn.addEventListener('click', function(e) {
+            var rect = btn.getBoundingClientRect();
+            ripple.style.left = (e.clientX - rect.left - 60) + 'px';
+            ripple.style.top = (e.clientY - rect.top - 60) + 'px';
+            ripple.style.transform = 'scale(0)';
+            ripple.style.opacity = '0.7';
+            void ripple.offsetWidth; // reflow
+            ripple.style.transform = 'scale(2.5)';
+            ripple.style.opacity = '0';
+        });
+    });
+    </script>
+</div>
+
+<h2>Liste des médecins</h2>
+<div class="table-responsive">
+    <table style="width:100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden;">
+        <thead style="background: #1976d2; color: #fff;">
+            <tr>
+                <th style="padding: 12px 8px; text-align: left;">Nom</th>
+                <th style="padding: 12px 8px; text-align: left;">Spécialité</th>
+                <th style="padding: 12px 8px; text-align: left;">Téléphone</th>
+                <th style="padding: 12px 8px; text-align: left;">Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doctor in doctors %}
+            <tr style="border-bottom: 1px solid #f0f0f0;">
+                <td style="padding: 10px 8px;">Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }}</td>
+                <td style="padding: 10px 8px;">{{ doctor.specialty }}</td>
+                <td style="padding: 10px 8px;">{{ doctor.user.phone }}</td>
+                <td style="padding: 10px 8px;">{{ doctor.user.email }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="padding: 16px; text-align: center; color: #888;">Aucun médecin enregistré</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="add-doctor-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" id="close-doctor-modal" style="float:right; font-size:2rem; cursor:pointer;">&times;</span>
+        <h2 style="margin-top:0; font-size:2rem;">Ajouter un médecin</h2>
+        <form id="add-doctor-form" method="post">
+            {% csrf_token %}
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="doctor_firstname">Prénom</label>
+                <input type="text" id="doctor_firstname" name="doctor-firstname" required style="width:100%;padding:12px; font-size:1.1rem;">
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="doctor_lastname">Nom</label>
+                <input type="text" id="doctor_lastname" name="doctor-lastname" required style="width:100%;padding:12px; font-size:1.1rem;">
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="doctor_phone">Téléphone</label>
+                <input type="tel" id="doctor_phone" name="doctor-phone" required style="width:100%;padding:12px; font-size:1.1rem;">
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="doctor_specialty">Spécialité</label>
+                <input type="text" id="doctor_specialty" name="doctor-specialty" required style="width:100%;padding:12px; font-size:1.1rem;">
+            </div>
+            <div style="margin-bottom:18px;">
+                <label>Disponibilités</label>
+                <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                    {% for day in days_of_week %}
+                    <div style="min-width:120px;">
+                        <input type="checkbox" id="avail-{{ day }}" name="avail-{{ day }}" style="margin-right:4px;">
+                        <label for="avail-{{ day }}">{{ day|capfirst }}</label>
+                        <input type="time" name="{{ day }}-start" style="width:80px;" placeholder="Début">
+                        <input type="time" name="{{ day }}-end" style="width:80px;" placeholder="Fin">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; font-size:1.15rem; padding:14px 0;">Enregistrer</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Ouvre la modale
+document.getElementById('add-doctor-btn').onclick = function() {
+    document.getElementById('add-doctor-modal').style.display = 'block';
+};
+// Ferme la modale
+document.getElementById('close-doctor-modal').onclick = function() {
+    document.getElementById('add-doctor-modal').style.display = 'none';
+};
+// Ferme la modale si on clique en dehors
+window.onclick = function(event) {
+    var modal = document.getElementById('add-doctor-modal');
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+};
+// Soumission AJAX du formulaire d'ajout de médecin
+document.getElementById('add-doctor-form').onsubmit = function(e) {
+    e.preventDefault();
+    var form = this;
+    var formData = new FormData(form);
+
+    fetch("{% url 'add_doctor' %}", {
+        method: "POST",
+        headers: {
+            'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('add-doctor-modal').style.display = 'none';
+            location.reload();
+        } else {
+            alert("Erreur: " + (data.error || "Impossible d'ajouter le médecin."));
+        }
+    })
+    .catch(err => {
+        alert("Erreur lors de l'envoi du formulaire.");
+    });
+};
+</script>
+{% endblock %}

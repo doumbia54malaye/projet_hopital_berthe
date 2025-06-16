@@ -1,0 +1,101 @@
+{% extends "gestion/base.html" %}
+{% block title %}Calendrier{% endblock %} {# Ceci est correct, ça remplit le bloc title #}
+{% block page_title %}Calendrier des Rendez-vous{% endblock %}
+
+{% block calendar_content %}
+<div class="calendar-controls" style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
+    <button id="prev-month" style="background: #1976d2; color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 1.2rem; cursor: pointer;">&#8592;</button>
+    <h3 id="current-month" style="margin: 0; font-weight: 600; color: #1976d2;"></h3>
+    <button id="next-month" style="background: #1976d2; color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 1.2rem; cursor: pointer;">&#8594;</button>
+</div>
+<div class="calendar-table-container" style="overflow-x: auto;">
+    <table id="calendar-table" style="width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08); border-radius: 8px; overflow: hidden;">
+        <thead>
+            <tr style="background: #1976d2; color: #fff;">
+                <th style="padding: 8px;">Lun</th>
+                <th style="padding: 8px;">Mar</th>
+                <th style="padding: 8px;">Mer</th>
+                <th style="padding: 8px;">Jeu</th>
+                <th style="padding: 8px;">Ven</th>
+                <th style="padding: 8px;">Sam</th>
+                <th style="padding: 8px;">Dim</th>
+            </tr>
+        </thead>
+        <tbody id="calendar-body">
+            <!-- Les jours seront générés par JavaScript -->
+        </tbody>
+    </table>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const monthNames = [
+        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ];
+    let today = new Date();
+    let currentMonth = today.getMonth();
+    let currentYear = today.getFullYear();
+
+    function renderCalendar(month, year) {
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const calendarBody = document.getElementById('calendar-body');
+        const currentMonthElem = document.getElementById('current-month');
+        calendarBody.innerHTML = '';
+        currentMonthElem.textContent = `${monthNames[month]} ${year}`;
+
+        let startDay = (firstDay.getDay() + 6) % 7; // Lundi = 0
+        let date = 1;
+        for (let i = 0; i < 6; i++) {
+            let row = document.createElement('tr');
+            for (let j = 0; j < 7; j++) {
+                let cell = document.createElement('td');
+                cell.style.padding = "12px";
+                cell.style.textAlign = "center";
+                cell.style.cursor = "pointer";
+                cell.style.border = "1px solid #e3e3e3";
+                cell.style.transition = "background 0.2s";
+                if (i === 0 && j < startDay) {
+                    cell.innerHTML = '';
+                } else if (date > lastDay.getDate()) {
+                    cell.innerHTML = '';
+                } else {
+                    cell.innerHTML = `<span style="display:inline-block;width:28px;height:28px;line-height:28px;border-radius:50%;${date === today.getDate() && month === today.getMonth() && year === today.getFullYear() ? 'background:#1976d2;color:#fff;font-weight:bold;' : 'color:#1976d2;'}">${date}</span>`;
+                    cell.addEventListener('mouseover', function() {
+                        this.style.background = "#e3f2fd";
+                    });
+                    cell.addEventListener('mouseout', function() {
+                        this.style.background = "";
+                    });
+                    // Ajoutez ici la logique pour afficher les rendez-vous
+                    date++;
+                }
+                row.appendChild(cell);
+            }
+            calendarBody.appendChild(row);
+            if (date > lastDay.getDate()) break;
+        }
+    }
+
+    document.getElementById('prev-month').onclick = function() {
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        renderCalendar(currentMonth, currentYear);
+    };
+    document.getElementById('next-month').onclick = function() {
+        currentMonth++;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        renderCalendar(currentMonth, currentYear);
+    };
+
+    renderCalendar(currentMonth, currentYear);
+});
+</script>
+<div id="calendar-view"></div>
+{% endblock %}

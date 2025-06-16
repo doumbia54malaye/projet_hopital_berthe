@@ -1,0 +1,338 @@
+{% extends "gestion/base.html" %}
+{% block title %}Gestion des Patients{% endblock %}
+{% block page_title %}Gestion des Patients{% endblock %}
+
+{% block patients_content %}
+<style>
+#add-patient-btn {
+    background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    padding: 12px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(79,140,255,0.13);
+    cursor: pointer;
+    transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+#add-patient-btn:hover {
+    background: linear-gradient(90deg, #38c6d9 0%, #4f8cff 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 24px rgba(56,198,217,0.18);
+}
+#add-patient-btn i {
+    font-size: 1.2em;
+}
+/* Overlay sombre pour la modale */
+#add-patient-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.55); /* Fond sombre */
+    justify-content: center;
+    align-items: center;
+}
+#add-patient-modal .modal-content {
+    background: #fff;
+    border-radius: 14px;
+    padding: 36px 32px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    position: relative;
+    max-width: 400px;
+    margin: auto;
+}
+</style>
+
+<div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
+    <button id="add-patient-btn" class="btn">
+        <i class="fas fa-user-plus"></i>
+        Ajouter un patient
+    </button>
+</div>
+
+<h2>Liste des patients</h2>
+<div class="table-responsive">
+    <style>
+        .patients-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        .patients-table th, .patients-table td {
+            padding: 12px 16px;
+            text-align: left;
+        }
+        .patients-table thead {
+            background: #f5f7fa;
+            color: #333;
+            font-weight: 600;
+        }
+        .patients-table tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+        .patients-table tbody tr:hover {
+            background: #f0f7ff;
+        }
+        .patients-table td {
+            color: #444;
+        }
+        .action-btn {
+            border: none;
+            background: none;
+            cursor: pointer;
+            margin: 0 4px;
+            font-size: 1.1em;
+            color: #38c6d9;
+            transition: color 0.18s, transform 0.18s;
+        }
+        .action-btn:hover {
+            color: #e14c4c;
+            transform: scale(1.18);
+        }
+        .action-btn.edit:hover {
+            color: #e6a100;
+        }
+        @media (max-width: 700px) {
+            .patients-table, .patients-table thead, .patients-table tbody, .patients-table th, .patients-table td, .patients-table tr {
+                display: block;
+            }
+            .patients-table thead {
+                display: none;
+            }
+            .patients-table tr {
+                margin-bottom: 1rem;
+                border-radius: 6px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            }
+            .patients-table td {
+                position: relative;
+                padding-left: 50%;
+                min-height: 40px;
+            }
+            .patients-table td:before {
+                position: absolute;
+                left: 16px;
+                top: 12px;
+                width: 45%;
+                white-space: nowrap;
+                font-weight: bold;
+                color: #888;
+                content: attr(data-label);
+            }
+        }
+    </style>
+
+    <table class="patients-table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Téléphone</th>
+                <th>Sexe</th>
+                <th>Date de naissance</th>
+                <th>Adresse</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for patient in patients %}
+            <tr data-patient-id="{{ patient.id }}">
+                <td data-label="Nom">{{ patient.first_name }} {{ patient.last_name }}</td>
+                <td data-label="Téléphone">{{ patient.phone }}</td>
+                <td data-label="Sexe">{{ patient.get_gender_display }}</td>
+                <td data-label="Date de naissance">{{ patient.birth_date }}</td>
+                <td data-label="Adresse">{{ patient.address }}</td>
+                <td data-label="Actions">
+                    <button class="action-btn edit" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn delete" title="Supprimer">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center;">Aucun patient enregistré</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Animated modal background and modal entrance animation -->
+<style>
+    /* Modal background animation */
+    #add-patient-modal {
+        animation: modal-bg-fade-in 0.35s;
+    }
+    @keyframes modal-bg-fade-in {
+        from { background: rgba(0,0,0,0); }
+        to   { background: rgba(0,0,0,0.55); }
+    }
+    /* Modal content entrance animation */
+    #add-patient-modal .modal-content {
+        animation: modal-content-pop 0.38s cubic-bezier(.23,1.12,.32,1) both;
+    }
+    @keyframes modal-content-pop {
+        0% {
+            opacity: 0;
+            transform: translateY(60px) scale(0.96);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    /* Optional: subtle animated background pattern */
+    #add-patient-modal::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: repeating-radial-gradient(circle at 30% 30%, #38c6d9 0, #38c6d9 2px, transparent 3px, transparent 100px),
+                    repeating-radial-gradient(circle at 70% 70%, #4f8cff 0, #4f8cff 2px, transparent 3px, transparent 100px);
+        opacity: 0.12;
+        animation: bg-move 8s linear infinite alternate;
+    }
+    @keyframes bg-move {
+        0% { background-position: 0 0, 0 0; }
+        100% { background-position: 60px 40px, -40px -60px; }
+    }
+</style>
+<div id="add-patient-modal" class="modal" style="display:none; background:rgba(0,0,0,0.55); position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:1000;">
+    <div class="modal-content" style="max-width:600px; margin:60px auto; background:#fff; border-radius:14px; padding:36px 32px; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative;">
+        <span class="close" id="close-patient-modal" style="float:right; font-size:2rem; cursor:pointer;">&times;</span>
+        <h2 style="margin-top:0; font-size:2rem;">Ajouter un patient</h2>
+        <form id="add-patient-form" method="post">
+            {% csrf_token %}
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="first_name">Prénom</label>
+                <input type="text" id="first_name" name="patient-firstname" required style="width:100%;padding:12px; font-size:1.1rem;">
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="last_name">Nom</label>
+                <input type="text" id="last_name" name="patient-lastname" required style="width:100%;padding:12px; font-size:1.1rem;">
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="phone">Téléphone</label>
+                <input type="tel" id="phone" name="patient-phone" required style="width:100%;padding:12px; font-size:1.1rem;">
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="gender">Sexe</label>
+                <select id="gender" name="patient-gender" required style="width:100%;padding:12px; font-size:1.1rem;">
+                    <option value="">Sélectionner</option>
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                </select>
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="birth_date">Date de naissance</label>
+                <input type="date" id="birth_date" name="patient-birthdate" required style="width:100%;padding:12px; font-size:1.1rem;">
+            </div>
+            <div class="input-group" style="margin-bottom:24px;">
+                <label for="address">Adresse</label>
+                <textarea id="address" name="patient-address" style="width:100%;padding:12px; font-size:1.1rem;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; font-size:1.15rem; padding:14px 0;">Enregistrer</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Ouvre la modale
+document.getElementById('add-patient-btn').onclick = function() {
+    document.getElementById('add-patient-modal').style.display = 'block';
+};
+// Ferme la modale
+document.getElementById('close-patient-modal').onclick = function() {
+    document.getElementById('add-patient-modal').style.display = 'none';
+};
+// Ferme la modale si on clique en dehors
+window.onclick = function(event) {
+    var modal = document.getElementById('add-patient-modal');
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+};
+// Soumission AJAX du formulaire d'ajout de patient
+document.getElementById('add-patient-form').onsubmit = function(e) {
+    e.preventDefault();
+    var form = this;
+    var formData = new FormData(form);
+
+    
+
+    fetch("{% url 'add_patient' %}", {
+        method: "POST",
+        headers: {
+            'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Fermer la modale
+            document.getElementById('add-patient-modal').style.display = 'none';
+            // Option 1: recharger la page pour voir le nouveau patient
+            location.reload();
+            // Option 2: ajouter dynamiquement à la table (non inclus ici)
+        } else {
+            alert("Erreur: " + (data.error || "Impossible d'ajouter le patient."));
+        }
+    })
+    .catch(err => {
+        alert("Erreur lors de l'envoi du formulaire.");
+    });
+};
+
+// Suppression patient (AJAX, nécessite une vue Django à créer)
+document.querySelectorAll('.action-btn.delete').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!confirm("Voulez-vous vraiment supprimer ce patient ?")) return;
+        var tr = btn.closest('tr');
+        var patientId = tr.getAttribute('data-patient-id');
+        fetch(`/patients/delete/${patientId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            if (data.success) {
+                tr.remove();
+            } else {
+                alert("Erreur lors de la suppression.");
+            }
+        });
+    });
+});
+
+// Modification patient (affiche la modale pré-remplie, nécessite adaptation JS)
+document.querySelectorAll('.action-btn.edit').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var tr = btn.closest('tr');
+        var patientId = tr.getAttribute('data-patient-id');
+        // Ici, chargez les infos du patient (via AJAX ou dataset) et ouvrez la modale en mode édition
+        // Exemple :
+        // openEditPatientModal(patientId);
+        alert("Fonction de modification à implémenter.");
+    });
+});
+</script>
+{% endblock %}

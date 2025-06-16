@@ -1,0 +1,308 @@
+{% extends "gestion/base.html" %}
+{% block title %}Gestion des Rendez-vous{% endblock %}
+{% block page_title %}Gestion des Rendez-vous{% endblock %}
+
+{% block appointments_content %}
+<div style="display: flex; justify-content: flex-end; margin-bottom: 28px;"></div>
+    <button id="add-appointment-btn" class="btn btn-primary" style="display:flex; align-items:center; gap:10px; font-size:1.1rem; font-weight:600; padding:12px 26px; border-radius:8px; box-shadow:0 2px 8px rgba(0,123,255,0.10); transition:background 0.2s, transform 0.2s; animation: btn-pop 0.7s cubic-bezier(.68,-0.55,.27,1.55); background:#007bff; border:none;">
+        <span style="display:inline-block; animation: calendar-shake 1.2s infinite alternate;">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <rect x="2" y="4" width="18" height="16" rx="4" fill="#eaf7ff"/>
+                <rect x="2" y="7" width="18" height="13" rx="3" fill="#fff"/>
+                <rect x="6" y="11" width="4" height="4" rx="1.5" fill="#007bff"/>
+                <rect x="12" y="11" width="4" height="4" rx="1.5" fill="#28a745"/>
+                <rect x="5" y="2" width="2" height="4" rx="1" fill="#007bff"/>
+                <rect x="15" y="2" width="2" height="4" rx="1" fill="#28a745"/>
+            </svg>
+        </span>
+        Prendre rendez-vous
+    </button>
+</div>
+<style>
+@keyframes btn-pop {
+    0% { transform: scale(0.8) translateY(-10px); opacity:0; }
+    60% { transform: scale(1.08) translateY(2px); opacity:1; }
+    100% { transform: scale(1) translateY(0); }
+}
+@keyframes calendar-shake {
+    0% { transform: rotate(-6deg) scale(1); }
+    100% { transform: rotate(6deg) scale(1.08); }
+}
+#add-appointment-btn:hover {
+    background: #218838;
+    transform: translateY(-2px) scale(1.03);
+}
+</style>
+
+<h2>Rendez-vous d'aujourd'hui</h2>
+<div class="table-responsive">
+    <table class="table table-striped table-hover" style="background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <thead style="background:#f5f6fa;">
+            <tr>
+                <th style="padding:14px 18px;">Patient</th>
+                <th style="padding:14px 18px;">Médecin</th>
+                <th style="padding:14px 18px;">Heure</th>
+                <th style="padding:14px 18px;">Motif</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appointment in today_appointments %}
+            <tr>
+                <td style="padding:12px 18px;">{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</td>
+                <td style="padding:12px 18px;">Dr. {{ appointment.doctor.user.last_name }}</td>
+                <td style="padding:12px 18px;">
+                    <span style="background:#eaf7ff; color:#007bff; padding:4px 10px; border-radius:6px; font-weight:500;">
+                        {{ appointment.time|time:"H:i" }}
+                    </span>
+                </td>
+                <td style="padding:12px 18px;">{{ appointment.reason }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align:center; padding:18px; color:#888;">Aucun rendez-vous aujourd'hui</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2>Rendez-vous à venir</h2>
+<div class="table-responsive">
+    <table class="table table-striped table-hover" style="background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <thead style="background:#f5f6fa;">
+            <tr>
+                <th style="padding:14px 18px;">Patient</th>
+                <th style="padding:14px 18px;">Médecin</th>
+                <th style="padding:14px 18px;">Date</th>
+                <th style="padding:14px 18px;">Heure</th>
+                <th style="padding:14px 18px;">Motif</th>
+                <th style="padding:14px 18px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appointment in upcoming_appointments %}
+            <tr data-appointment-id="{{ appointment.id }}">
+                <td style="padding:12px 18px;">{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</td>
+                <td style="padding:12px 18px;">Dr. {{ appointment.doctor.user.last_name }}</td>
+                <td style="padding:12px 18px;">
+                    <span style="background:#f0f7ea; color:#28a745; padding:4px 10px; border-radius:6px; font-weight:500;">
+                        {{ appointment.date }}
+                    </span>
+                </td>
+                <td style="padding:12px 18px;">
+                    <span style="background:#eaf7ff; color:#007bff; padding:4px 10px; border-radius:6px; font-weight:500;">
+                        {{ appointment.time|time:"H:i" }}
+                    </span>
+                </td>
+                <td style="padding:12px 18px;">{{ appointment.reason }}</td>
+                <td style="padding:12px 18px;">
+                    <button class="btn btn-sm btn-warning edit-appointment-btn" title="Modifier" style="margin-right:6px;">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-appointment-btn" title="Supprimer">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center; padding:18px; color:#888;">Aucun rendez-vous à venir</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal pour ajouter un rendez-vous -->
+<div id="add-appointment-modal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:600px; margin:60px auto; background:#fff; border-radius:14px; padding:36px 32px; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative;">
+        <span class="close" id="close-appointment-modal" style="float:right; font-size:2rem; cursor:pointer;">&times;</span>
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:18px;">
+            <div style="animation: calendar-pop 0.7s cubic-bezier(.68,-0.55,.27,1.55);">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <rect x="6" y="10" width="36" height="32" rx="6" fill="#eaf7ff"/>
+                <rect x="6" y="16" width="36" height="26" rx="4" fill="#fff"/>
+                <rect x="14" y="24" width="8" height="8" rx="2" fill="#007bff"/>
+                <rect x="26" y="24" width="8" height="8" rx="2" fill="#28a745"/>
+                <rect x="14" y="34" width="8" height="6" rx="2" fill="#f5c542"/>
+                <rect x="26" y="34" width="8" height="6" rx="2" fill="#ff7675"/>
+                <rect x="12" y="6" width="4" height="8" rx="2" fill="#007bff"/>
+                <rect x="32" y="6" width="4" height="8" rx="2" fill="#28a745"/>
+            </svg>
+            </div>
+            <h2 style="margin:0; font-size:2rem; font-weight:700; letter-spacing:-1px; color:#007bff; animation: fade-in-down 0.7s;">Prendre rendez-vous</h2>
+        </div>
+        <style>
+        @keyframes calendar-pop {
+            0% { transform: scale(0.7) rotate(-10deg); opacity:0; }
+            60% { transform: scale(1.1) rotate(2deg); opacity:1; }
+            100% { transform: scale(1) rotate(0); }
+        }
+        @keyframes fade-in-down {
+            0% { opacity:0; transform:translateY(-18px);}
+            100% { opacity:1; transform:translateY(0);}
+        }
+        </style>
+        <form id="add-appointment-form" method="post">
+            {% csrf_token %}
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="appointment-patient">Patient</label>
+                <select id="appointment-patient" name="appointment-patient" required style="width:100%;padding:12px; font-size:1.1rem;">
+                    <option value="">Sélectionner un patient</option>
+                    {% for patient in patients %}
+                    <option value="{{ patient.id }}">{{ patient.first_name }} {{ patient.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="appointment-doctor">Médecin</label>
+                <select id="appointment-doctor" name="appointment-doctor" required style="width:100%;padding:12px; font-size:1.1rem;">
+                    <option value="">Sélectionner un médecin</option>
+                    {% for doctor in doctors %}
+                    <option value="{{ doctor.id }}">{{ doctor.first_name }} {{ doctor.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="appointment-date">Date</label>
+                <input type="date" id="appointment-date" name="appointment-date" required style="width:100%;padding:12px; font-size:1.1rem;">
+            </div>
+            <div class="input-group" style="margin-bottom:18px;">
+                <label for="time-slot">Créneau horaire</label>
+                <input 
+                    type="text" 
+                    id="time-slot" 
+                    name="time-slot" 
+                    required 
+                    placeholder="Ex: 09:00 ou choisissez ci-dessous" 
+                    style="width:100%;padding:12px; font-size:1.1rem;"
+                    list="available-time-slots"
+                >
+                <datalist id="available-time-slots">
+                    <!-- Les options seront ajoutées dynamiquement en JS -->
+                </datalist>
+            </div>
+            <div class="input-group" style="margin-bottom:24px;">
+                <label for="appointment-reason">Motif</label>
+                <textarea id="appointment-reason" name="appointment-reason" required style="width:100%;padding:12px; font-size:1.1rem;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; font-size:1.15rem; padding:14px 0;">Enregistrer</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Gestion de la modale
+(function() {
+    const modal = document.getElementById('add-appointment-modal');
+    const openBtn = document.getElementById('add-appointment-btn');
+    const closeBtn = document.getElementById('close-appointment-modal');
+
+    openBtn.onclick = function() {
+        modal.style.display = 'block';
+    };
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    };
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    };
+})();
+
+// Chargement dynamique des créneaux horaires disponibles
+(function() {
+    const doctorSelect = document.getElementById('appointment-doctor');
+    const dateInput = document.getElementById('appointment-date');
+    const timeInput = document.getElementById('time-slot');
+    const datalist = document.getElementById('available-time-slots');
+
+    function loadSlots() {
+        const doctorId = doctorSelect.value;
+        const date = dateInput.value;
+        datalist.innerHTML = '';
+        if (doctorId && date) {
+            fetch("{% url 'get_slots' %}?doctor_id=" + doctorId + "&date=" + date)
+            .then(response => response.json())
+            .then(data => {
+                if (data.slots && data.slots.length > 0) {
+                    data.slots.forEach(function(slot) {
+                        const opt = document.createElement('option');
+                        opt.value = slot;
+                        datalist.appendChild(opt);
+                    });
+                }
+            });
+        }
+    }
+
+    doctorSelect.onchange = loadSlots;
+    dateInput.onchange = loadSlots;
+})();
+
+// Soumission AJAX du formulaire d'ajout de rendez-vous
+document.getElementById('add-appointment-form').onsubmit = function(e) {
+    e.preventDefault();
+    const form = this;
+    const formData = new FormData(form);
+
+    fetch("{% url 'add_appointment' %}", {
+        method: "POST",
+        headers: {
+            'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('add-appointment-modal').style.display = 'none';
+            location.reload();
+        } else {
+            alert("Erreur: " + (data.error || "Impossible d'ajouter le rendez-vous."));
+        }
+    })
+    .catch(() => {
+        alert("Erreur lors de l'envoi du formulaire.");
+    });
+};
+
+// Gestion suppression (AJAX, nécessite une vue Django à créer)
+document.querySelectorAll('.delete-appointment-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!confirm("Voulez-vous vraiment supprimer ce rendez-vous ?")) return;
+        var tr = btn.closest('tr');
+        var appointmentId = tr.getAttribute('data-appointment-id');
+        fetch(`/appointments/delete/${appointmentId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            if (data.success) {
+                tr.remove();
+            } else {
+                alert("Erreur lors de la suppression.");
+            }
+        });
+    });
+});
+
+// Gestion modification (affiche la modale pré-remplie, nécessite adaptation JS)
+document.querySelectorAll('.edit-appointment-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var tr = btn.closest('tr');
+        var appointmentId = tr.getAttribute('data-appointment-id');
+        // Ici, chargez les infos du rendez-vous (via AJAX ou dataset) et ouvrez la modale en mode édition
+        // Exemple :
+        // openEditAppointmentModal(appointmentId);
+        alert("Fonction de modification à implémenter.");
+    });
+});
+</script>
+{% endblock %}
