@@ -92,6 +92,22 @@
     opacity: 0;
     transition: 0s;
 }
+.action-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    margin: 0 4px;
+    font-size: 1.1em;
+    color: #38c6d9;
+    transition: color 0.18s, transform 0.18s;
+}
+.action-btn:hover {
+    color: #e14c4c;
+    transform: scale(1.18);
+}
+.action-btn.edit:hover {
+    color: #e6a100;
+}
 </style>
 
 <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
@@ -124,29 +140,50 @@
     <table style="width:100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden;">
         <thead style="background: #1976d2; color: #fff;">
             <tr>
-                <th style="padding: 12px 8px; text-align: left;">Nom</th>
-                <th style="padding: 12px 8px; text-align: left;">Spécialité</th>
-                <th style="padding: 12px 8px; text-align: left;">Téléphone</th>
-                <th style="padding: 12px 8px; text-align: left;">Email</th>
+                <th style="padding: 12px 8px;">N°</th>
+                <th style="padding: 12px 8px;">Nom</th>
+                <th style="padding: 12px 8px;">Spécialité</th>
+                <th style="padding: 12px 8px;">Téléphone</th>
+                <th style="padding: 12px 8px;">Disponibilité</th>
+                <th style="padding: 12px 8px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for doctor in doctors %}
-            <tr style="border-bottom: 1px solid #f0f0f0;">
+            <tr data-doctor-id="{{ doctor.id }}">
+                <td style="padding: 10px 8px;">{{ forloop.counter }}</td>
                 <td style="padding: 10px 8px;">Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }}</td>
                 <td style="padding: 10px 8px;">{{ doctor.specialty }}</td>
                 <td style="padding: 10px 8px;">{{ doctor.user.phone }}</td>
-                <td style="padding: 10px 8px;">{{ doctor.user.email }}</td>
+                <td style="padding: 10px 8px;">
+                    {% if doctor.availability %}
+                        {% for day, hours in doctor.availability.items %}
+                            <div>
+                                <strong>{{ day }}:</strong>
+                                {% if hours.start and hours.end %}
+                                    {{ hours.start }} - {{ hours.end }}
+                                {% else %}
+                                    Non disponible
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <span style="color:#888;">Non renseigné</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 10px 8px;">
+                    <button class="action-btn edit" title="Modifier"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn delete" title="Supprimer"><i class="fas fa-trash-alt"></i></button>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4" style="padding: 16px; text-align: center; color: #888;">Aucun médecin enregistré</td>
+                <td colspan="6" style="padding: 16px; text-align: center; color: #888;">Aucun médecin enregistré</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-
 <div id="add-doctor-modal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close" id="close-doctor-modal" style="float:right; font-size:2rem; cursor:pointer;">&times;</span>
@@ -229,5 +266,37 @@ document.getElementById('add-doctor-form').onsubmit = function(e) {
         alert("Erreur lors de l'envoi du formulaire.");
     });
 };
+// Suppression médecin (AJAX, nécessite une vue Django à créer)
+document.querySelectorAll('.action-btn.delete').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!confirm("Voulez-vous vraiment supprimer ce médecin ?")) return;
+        var tr = btn.closest('tr');
+        var doctorId = tr.getAttribute('data-doctor-id');
+        fetch(`/doctors/delete/${doctorId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            if (data.success) {
+                tr.remove();
+            } else {
+                alert("Erreur lors de la suppression.");
+            }
+        });
+    });
+});
+// Modification médecin (à compléter)
+document.querySelectorAll('.action-btn.edit').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var tr = btn.closest('tr');
+        var doctorId = tr.getAttribute('data-doctor-id');
+        alert("Fonction de modification à implémenter.");
+    });
+});
 </script>
 {% endblock %}

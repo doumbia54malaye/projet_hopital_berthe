@@ -8,7 +8,8 @@ from datetime import datetime, timedelta, date
 import json
 from django.views.decorators.csrf import csrf_exempt
 import logging
-
+from django.shortcuts import get_object_or_404
+from django.contrib import messages
 
 logger = logging.getLogger(__name__)
 
@@ -282,3 +283,58 @@ def get_patients(request):
 def get_doctors(request):
     doctors = list(Doctor.objects.values('id', 'user__first_name', 'user__last_name', 'specialty'))
     return JsonResponse(doctors, safe=False)
+
+
+@csrf_exempt
+@login_required
+def delete_appointment(request, appointment_id):
+    if request.method == 'POST':
+        try:
+            appointment = Appointment.objects.get(id=appointment_id)
+            appointment.delete()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+
+@login_required
+def get_appointment_details(request, appointment_id):
+    try:
+        appointment = Appointment.objects.get(id=appointment_id)
+        return JsonResponse({
+            'success': True,
+            'patient_id': appointment.patient.id,
+            'doctor_id': appointment.doctor.id,
+            'date': appointment.date.strftime('%Y-%m-%d'),
+            'time': appointment.time.strftime('%H:%M'),
+            'reason': appointment.reason
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+def update_appointment(request, appointment_id):
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    
+    if request.method == 'POST':
+        form = AppointmentForm(request.POST, instance=appointment)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({
+                'success': False, 
+                'errors': form.errors.as_json()
+            }, status=400)
+    
+    # Préparation des données pour la modale
+    appointment_data = {
+        'id': appointment.id,
+        'patient_id': appointment.patient.id,
+        'doctor_id': appointment.doctor.id,
+        'date': appointment.date.strftime('%Y-%m-%d'),
+        'time': appointment.time.strftime('%H:%M'),
+        'reason': appointment.reason,
+    }
+    
+    return JsonResponse({'success': True, 'appointment': appointment_data})

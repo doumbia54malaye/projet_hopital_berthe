@@ -6,54 +6,169 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion Médicale - {% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'gestion/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+    <style>
+    body {
+        min-height: 100vh;
+        background: linear-gradient(120deg, #eaf7ff 0%, #f5f6fa 100%);
+        position: relative;
+        overflow-x: hidden;
+        font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    #animated-bg-svg {
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0.22;
+        animation: bg-move 18s linear infinite alternate;
+    }
+    @keyframes bg-move {
+        0% { transform: scale(1) translateY(0);}
+        100% { transform: scale(1.08) translateY(-30px);}
+    }
+    #sidebar {
+        background: linear-gradient(120deg, #38c6d9 0%, #4f8cff 100%);
+        min-width: 220px;
+        max-width: 260px;
+        color: #fff;
+        min-height: 100vh;
+        box-shadow: 2px 0 16px rgba(56,198,217,0.08);
+        padding: 0;
+        position: fixed;
+        left: 0; top: 0; bottom: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    #logo {
+        font-size: 2rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        padding: 32px 0 18px 0;
+        text-align: center;
+        color: #fff;
+        text-shadow: 0 2px 12px #38c6d9;
+    }
+    #menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        flex: 1;
+    }
+    #menu li {
+        margin: 0;
+    }
+    #menu .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 32px;
+        color: #fff;
+        text-decoration: none;
+        font-size: 1.08rem;
+        font-weight: 500;
+        border-left: 4px solid transparent;
+        transition: background 0.18s, border-color 0.18s, color 0.18s;
+    }
+    #menu .menu-item.active, #menu .menu-item:hover {
+        background: rgba(255,255,255,0.08);
+        border-left: 4px solid #fff;
+        color: #fff;
+    }
+    #main-content {
+        margin-left: 260px;
+        padding: 36px 32px 32px 32px;
+        min-height: 100vh;
+        background: transparent;
+        transition: margin-left 0.2s;
+    }
+    #header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 32px;
+    }
+    #page-title {
+        font-size: 2.1rem;
+        font-weight: 700;
+        color: #1976d2;
+        letter-spacing: -1px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .page-content {
+        animation: fadeInPage 0.7s cubic-bezier(.68,-0.55,.27,1.55);
+    }
+    @keyframes fadeInPage {
+        0% { opacity:0; transform:translateY(18px) scale(0.98);}
+        100% { opacity:1; transform:translateY(0) scale(1);}
+    }
+    /* Responsive */
+    @media (max-width: 900px) {
+        #sidebar { min-width: 60px; max-width: 60px; }
+        #main-content { margin-left: 60px; padding: 18px 8px 8px 8px; }
+        #logo { font-size: 1.2rem; padding: 18px 0 8px 0; }
+        #menu .menu-item { padding: 12px 10px; font-size: 1rem; }
+        #header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    }
+    </style>
 </head>
 <body>
-    <script>
-        // Définition du chemin de base pour l'application
-        const BASE_PATH = "{% url 'dashboard' %}".replace('/dashboard/', '');
-        const LOGIN_URL = "{% url 'login' %}";
-        const LOGOUT_URL = "{% url 'logout' %}";
-        const ADD_PATIENT_URL = "{% url 'add_patient' %}";
-        const ADD_DOCTOR_URL = "{% url 'add_doctor' %}";
-        const ADD_APPOINTMENT_URL = "{% url 'add_appointment' %}";
-        const GET_SLOTS_URL = "{% url 'get_slots' %}";
-        const GET_PATIENTS_URL = "{% url 'patients' %}";
-        const GET_DOCTORS_URL = "{% url 'doctors' %}";
-    </script>
+    <svg id="animated-bg-svg" viewBox="0 0 1440 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#38c6d9" fill-opacity="0.25">
+            <animate attributeName="d" dur="12s" repeatCount="indefinite"
+                values="
+                    M0,0 C480,200 960,0 1440,200 L1440,900 L0,900 Z;
+                    M0,0 C480,300 960,100 1440,300 L1440,900 L0,900 Z;
+                    M0,0 C480,200 960,0 1440,200 L1440,900 L0,900 Z
+                "
+            />
+        </path>
+        <circle cx="1200" cy="200" r="180" fill="#4f8cff" fill-opacity="0.13">
+            <animate attributeName="cy" values="200;300;200" dur="10s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="300" cy="700" r="120" fill="#38c6d9" fill-opacity="0.18">
+            <animate attributeName="cy" values="700;600;700" dur="13s" repeatCount="indefinite"/>
+        </circle>
+    </svg>
     {% if user.is_authenticated %}
     <div id="app-container">
         <div id="sidebar">
-            <div id="logo">MediGestion</div>
+            <div id="logo">
+                <img src="https://img.icons8.com/ios-filled/48/ffffff/hospital.png" style="width:38px;vertical-align:middle;margin-right:8px;">
+                MediGestion
+            </div>
             <ul id="menu">
-                <li><a href="{% url 'dashboard' %}" class="menu-item" data-target="dashboard">Tableau de bord</a></li>
-                <li><a href="{% url 'patients' %}" class="menu-item" data-target="patients">Patients</a></li>
-                <li><a href="{% url 'doctors' %}" class="menu-item" data-target="doctors">Médecins</a></li>
-                <li><a href="{% url 'appointments' %}" class="menu-item" data-target="appointments">Rendez-vous</a></li>
-                <li><a href="{% url 'calendar' %}" class="menu-item" data-target="calendar">Calendrier</a></li>
+                <li><a href="{% url 'dashboard' %}" class="menu-item" data-target="dashboard"><i class="fas fa-home"></i> <span class="d-none d-md-inline">Tableau de bord</span></a></li>
+                <li><a href="{% url 'patients' %}" class="menu-item" data-target="patients"><i class="fas fa-user-injured"></i> <span class="d-none d-md-inline">Patients</span></a></li>
+                <li><a href="{% url 'doctors' %}" class="menu-item" data-target="doctors"><i class="fas fa-user-md"></i> <span class="d-none d-md-inline">Médecins</span></a></li>
+                <li><a href="{% url 'appointments' %}" class="menu-item" data-target="appointments"><i class="fas fa-calendar-check"></i> <span class="d-none d-md-inline">Rendez-vous</span></a></li>
+                <li><a href="{% url 'calendar' %}" class="menu-item" data-target="calendar"><i class="fas fa-calendar-alt"></i> <span class="d-none d-md-inline">Calendrier</span></a></li>
             </ul>
         </div>
-
         <div id="main-content">
             <div id="header">
                 <h1 id="page-title">{% block page_title %}{% endblock %}</h1>
             </div>
-
             <div class="page-content" id="dashboard-content">
                 {% block dashboard_content %}{% endblock %}
             </div>
-
             <div class="page-content" id="patients-content">
                 {% block patients_content %}{% endblock %}
             </div>
-
             <div class="page-content" id="doctors-content">
                 {% block doctors_content %}{% endblock %}
             </div>
-
             <div class="page-content" id="appointments-content">
                 {% block appointments_content %}{% endblock %}
             </div>
-
             <div class="page-content" id="calendar-content">
                 {% block calendar_content %}{% endblock %}
             </div>

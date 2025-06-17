@@ -3,20 +3,32 @@
 {% block page_title %}Tableau de bord{% endblock %}
 
 {% block dashboard_content %}
-<div class="stats animate-dashboard">
-    <div class="stat-card animate-card">
+<div class="stats animate-dashboard" style="background: linear-gradient(90deg, #e3f2fd 0%, #fce4ec 100%); padding: 2rem 1rem; border-radius: 18px; box-shadow: 0 6px 32px rgba(79,140,255,0.09);">
+    <div class="stat-card animate-card" style="background: linear-gradient(135deg, #fff 70%, #e3f2fd 100%); border: 1px solid #e3f2fd;">
+        <div style="background: #1976d2; border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <img src="https://img.icons8.com/fluency/48/ffffff/calendar.png" alt="Rendez-vous">
+        </div>
         <h3>Rendez-vous aujourd'hui</h3>
         <p>{{ today_appointments }}</p>
     </div>
-    <div class="stat-card animate-card">
+    <div class="stat-card animate-card" style="background: linear-gradient(135deg, #fff 70%, #e1f5fe 100%); border: 1px solid #e1f5fe;">
+        <div style="background: #38c6d9; border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <img src="https://img.icons8.com/fluency/48/ffffff/doctor-male.png" alt="Médecin">
+        </div>
         <h3>Médecins disponibles</h3>
         <p>{{ available_doctors }}</p>
     </div>
-    <div class="stat-card animate-card">
+    <div class="stat-card animate-card" style="background: linear-gradient(135deg, #fff 70%, #fce4ec 100%); border: 1px solid #fce4ec;">
+        <div style="background: #ff80ab; border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <img src="https://img.icons8.com/fluency/48/ffffff/patient-oxygen-mask.png" alt="Patient">
+        </div>
         <h3>Patients enregistrés</h3>
         <p>{{ total_patients }}</p>
     </div>
-    <div class="stat-card animate-card">
+    <div class="stat-card animate-card" style="background: linear-gradient(135deg, #fff 70%, #ffe0b2 100%); border: 1px solid #ffe0b2;">
+        <div style="background: #ffb300; border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <img src="https://img.icons8.com/fluency/48/ffffff/calendar-1.png" alt="À venir">
+        </div>
         <h3>Rendez-vous à venir</h3>
         <p>{{ upcoming_appointments }}</p>
     </div>
@@ -147,29 +159,77 @@
 </style>
 
 <h2>Prochains rendez-vous</h2>
-<div class="table-responsive animate-table">
-    <table>
+<div class="table-responsive animate-table" style="margin-top: 1.5rem;">
+    <table class="data-table" style="overflow: hidden;">
         <thead>
             <tr>
-                <th>Patient</th>
-                <th>Médecin</th>
-                <th>Date</th>
-                <th>Heure</th>
-                <th>Motif</th>
+                <th>
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                        <img src="https://img.icons8.com/fluency/20/000000/patient-oxygen-mask.png" alt="Patient" style="vertical-align: middle;">
+                        Patient
+                    </span>
+                </th>
+                <th>
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                        <img src="https://img.icons8.com/fluency/20/000000/doctor-male.png" alt="Médecin" style="vertical-align: middle;">
+                        Médecin
+                    </span>
+                </th>
+                <th>
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                        <img src="https://img.icons8.com/fluency/20/000000/calendar.png" alt="Date" style="vertical-align: middle;">
+                        Date
+                    </span>
+                </th>
+                <th>
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                        <img src="https://img.icons8.com/fluency/20/000000/clock.png" alt="Heure" style="vertical-align: middle;">
+                        Heure
+                    </span>
+                </th>
+                <th>
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                        <img src="https://img.icons8.com/fluency/20/000000/idea.png" alt="Motif" style="vertical-align: middle;">
+                        Motif
+                    </span>
+                </th>
             </tr>
         </thead>
         <tbody>
             {% for appointment in upcoming_appointments_list %}
-            <tr>
-                <td>{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</td>
-                <td>{{ appointment.doctor.user.first_name }} {{ appointment.doctor.user.last_name }}</td>
-                <td>{{ appointment.date }}</td>
-                <td>{{ appointment.time }}</td>
-                <td>{{ appointment.reason }}</td>
+            <tr style="transition: background 0.2s;">
+                <td data-label="Patient">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <img src="https://img.icons8.com/color/28/000000/user.png" alt="Patient" style="border-radius: 50%;">
+                        <span>{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</span>
+                    </span>
+                </td>
+                <td data-label="Médecin">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <img src="https://img.icons8.com/color/28/000000/doctor-male.png" alt="Médecin" style="border-radius: 50%;">
+                        <span>{{ appointment.doctor.user.first_name }} {{ appointment.doctor.user.last_name }}</span>
+                    </span>
+                </td>
+                <td data-label="Date">
+                    <span style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 8px; font-weight: 500;">
+                        {{ appointment.date }}
+                    </span>
+                </td>
+                <td data-label="Heure">
+                    <span style="background: #fffde7; color: #ffb300; padding: 4px 10px; border-radius: 8px; font-weight: 500;">
+                        {{ appointment.time }}
+                    </span>
+                </td>
+                <td data-label="Motif">
+                    <span style="color: #444;">{{ appointment.reason }}</span>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5">Aucun rendez-vous à venir</td>
+                <td colspan="5" style="text-align: center; color: #888; padding: 2rem;">
+                    <img src="https://img.icons8.com/fluency/40/000000/calendar--v2.png" alt="Aucun" style="vertical-align: middle; margin-bottom: 6px;"><br>
+                    Aucun rendez-vous à venir
+                </td>
             </tr>
             {% endfor %}
         </tbody>
