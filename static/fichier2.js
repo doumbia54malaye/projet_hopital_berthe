@@ -301,6 +301,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+ 
+
+      // Nouvelle fonction scheduleAppointment qui prend l'ID du patient
+    function scheduleAppointment(patientId) {
+        if (patientId) {
+        // Adaptez cette URL en fonction de votre configuration Django
+        // Si votre application 'gestion' est incluse sous le préfixe 'gestion/' dans votre urls.py principal:
+        window.location.href = `/gestion/patients/${patientId}/prendre_rendezvous/`;
+        console.log("Redirection vers : " + window.location.href);
+    } else {
+        console.error("Erreur: ID du patient introuvable pour la prise de rendez-vous.");
+        alert("Impossible de prendre rendez-vous. ID du patient introuvable.");
+    }
+}
+
+
+
+
+
+
 
     async function viewPatientDetails(id) {
         try {

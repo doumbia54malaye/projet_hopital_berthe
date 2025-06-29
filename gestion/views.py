@@ -593,3 +593,7 @@ def get_doctors_list(request):
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+    
+
+
+    

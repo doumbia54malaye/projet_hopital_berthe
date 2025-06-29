@@ -246,6 +246,10 @@
         <i class="fas fa-user-plus"></i>
         Nouveau patient + Consultation
     </button>
+
+    <a href="{% url 'appointments' %}" id="appointments-btn" class="btn">
+        <i class="fas fa-calendar-check"></i> Gérer les Rendez-vous
+    </a>
 </div>
 
 <h2>
@@ -280,6 +284,9 @@
                     </button>
                     <button class="action-btn consult" title="Nouvelle consultation" onclick="newConsultation(this)">
                         <i class="fas fa-stethoscope"></i> Consulter
+                    </button>
+                    <button class="action-btn schedule-appointment" title="Prendre Rendez-vous" onclick="openAppointmentModal(this)">
+                        <i class="fas fa-calendar-plus"></i> Prendre Rendez-vous
                     </button>
                     <button class="action-btn delete" title="Supprimer" onclick="deletePatient(this)">
                         <i class="fas fa-trash"></i> Supprimer
@@ -503,6 +510,50 @@
         </form>
     </div>
 </div>
+
+<!-- Modale Prendre Rendez-vous -->
+<div id="appointment-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeAppointmentModal()" style="position:absolute; top:10px; right: 20px; font-size:2rem; cursor:pointer; color:#888;">×</span>
+        <h2 style="margin-top:0; font-size:1.5rem;">
+            <i class="fas fa-calendar-plus"></i> Prendre Rendez-vous
+        </h2>
+        <form id="appointment-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" id="appointment-patient-id" name="patient_id">
+            <div class="form-group">
+                <label for="appointment-doctor">Médecin *</label>
+                <select id="appointment-doctor" name="doctor" required>
+                    <option value="">Sélectionner un médecin</option>
+                    {% for doctor in doctors %}
+                    <option value="{{ doctor.id }}">
+                        Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }} - {{ doctor.specialty }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="appointment-date">Date *</label>
+                <input type="date" id="appointment-date" name="date" required>
+            </div>
+            <div class="form-group">
+                <label for="appointment-time">Heure *</label>
+                <input type="time" id="appointment-time" name="time" required>
+            </div>
+            <div class="form-group">
+                <label for="appointment-reason">Motif du rendez-vous *</label>
+                <textarea id="appointment-reason" name="reason" rows="2" required></textarea>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary" onclick="closeAppointmentModal()">Annuler</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Enregistrer Rendez-vous
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     // Variables globales
 let isEditMode = false;
@@ -513,8 +564,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sélecteurs d'éléments
     const patientModal = document.getElementById('patient-modal');
     const consultationModal = document.getElementById('consultation-modal');
+    const appointmentModal = document.getElementById('appointment-modal');
     const mainForm = document.getElementById('patient-consultation-form');
     const consultationForm = document.getElementById('consultation-form');
+    const appointmentForm = document.getElementById('appointment-form');
     const addPatientBtn = document.getElementById('add-patient-btn');
     const closeModalBtn = document.getElementById('close-modal');
     
@@ -538,6 +591,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (event.target == consultationModal) {
             closeConsultationModal();
         }
+        if (event.target == appointmentModal) {
+            closeAppointmentModal();
+        }
     });
     
     // Gestionnaire de soumission des formulaires
@@ -546,6 +602,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (consultationForm) {
         consultationForm.addEventListener('submit', handleConsultationSubmit);
+    }
+    if (appointmentForm) {
+        appointmentForm.addEventListener('submit', handleAppointmentSubmit);
     }
 });
 
@@ -590,6 +649,12 @@ function closeConsultationModal() {
     const consultationModal = document.getElementById('consultation-modal');
     consultationModal.style.display = 'none';
     document.getElementById('consultation-form').reset();
+}
+
+function closeAppointmentModal() {
+    const appointmentModal = document.getElementById('appointment-modal');
+    appointmentModal.style.display = 'none';
+    document.getElementById('appointment-form').reset();
 }
 
 function resetForm() {
@@ -692,6 +757,14 @@ function newConsultation(button) {
     // Ouvrir la modal de consultation
     const consultationModal = document.getElementById('consultation-modal');
     consultationModal.style.display = 'flex';
+}
+
+function openAppointmentModal(button) {
+    const row = button.closest('tr');
+    const patientId = row.dataset.patientId;
+    document.getElementById('appointment-patient-id').value = patientId;
+    document.getElementById('appointment-form').reset();
+    document.getElementById('appointment-modal').style.display = 'flex';
 }
 
 function deletePatient(button) {
@@ -812,6 +885,40 @@ function handleConsultationSubmit(event) {
             closeConsultationModal();
         } else {
             showMessage('Erreur: ' + (data.error || 'Erreur inconnue'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoader(submitBtn);
+        console.error('Error:', error);
+        showMessage('Erreur de communication.', 'error');
+    });
+}
+
+function handleAppointmentSubmit(event) {
+    event.preventDefault();
+    console.log('Appointment form submitted'); // Debug
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    showLoader(submitBtn);
+    
+    fetch("{% url 'create_appointment' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoader(submitBtn);
+        if (data.success) {
+            showMessage('Rendez-vous enregistré avec succès.', 'success');
+            closeAppointmentModal();
+        } else {
+            showMessage('Erreur: ' + (data.error || 'Impossible de prendre rendez-vous.'), 'error');
         }
     })
     .catch(error => {
@@ -1052,4 +1159,58 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 </script>
+
+
+
+
+
+
+<style>
+    /* Votre CSS existant pour .btn et autres styles est probablement déjà là */
+    /* Assurez-vous que les styles généraux de bouton comme .btn sont définis. */
+
+    /* Nouveau style spécifique pour le bouton "Gérer les Rendez-vous" si vous le souhaitez */
+    #appointments-btn {
+        background: linear-gradient(90deg, #28a745 0%, #218838 100%); /* Exemple de couleur verte */
+        color: #fff;
+        border: none;
+        border-radius: 25px;
+        padding: 12px 32px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        box-shadow: 0 4px 16px rgba(40, 167, 69, 0.15);
+        cursor: pointer;
+        transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: 15px; /* Pour l'espacement entre les boutons */
+    }
+    #appointments-btn:hover {
+        background: linear-gradient(90deg, #218838 0%, #28a745 100%);
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 8px 24px rgba(40, 167, 69, 0.25);
+    }
+</style>
+
+<div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
+    <button id="add-patient-btn" class="btn">
+        <i class="fas fa-user-plus"></i>
+        Nouveau patient + Consultation
+    </button>
+
+    <a href="{% url 'appointments' %}" id="appointments-btn" class="btn">
+        <i class="fas fa-calendar-check"></i> Gérer les Rendez-vous
+    </a>
+</div>
+
+<h2>
+    <i class="fas fa-list-ul" style="vertical-align:middle; margin-right:8px; color: #38c6d9;"></i>
+    Liste des patients
+</h2>
 {% endblock patients_content %}
+
+<script>
+    // ... Votre JavaScript existant pour patients.html ...
+</script>
