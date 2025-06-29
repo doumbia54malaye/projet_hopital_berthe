@@ -1,161 +1,255 @@
 {% extends "gestion/base.html" %}
+{% load static %}
+
 {% block title %}Gestion des Patients{% endblock %}
 {% block page_title %}Gestion des Patients{% endblock %}
-
 {% block patients_content %}
+
 <style>
-#add-patient-btn {
-    background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
-    color: #fff;
-    border: none;
-    border-radius: 25px;
-    padding: 12px 32px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    box-shadow: 0 4px 16px rgba(79,140,255,0.13);
-    cursor: pointer;
-    transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
-    letter-spacing: 0.5px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}
-#add-patient-btn:hover {
-    background: linear-gradient(90deg, #38c6d9 0%, #4f8cff 100%);
-    transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 8px 24px rgba(56,198,217,0.18);
-}
-#add-patient-btn i {
-    font-size: 1.2em;
-}
-/* Overlay sombre pour la modale */
-#add-patient-modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0; top: 0;
-    width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.55); /* Fond sombre */
-    justify-content: center;
-    align-items: center;
-}
-#add-patient-modal .modal-content {
-    background: #fff;
-    border-radius: 14px;
-    padding: 36px 32px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-    position: relative;
-    max-width: 400px;
-    margin: auto;
-}
-.patients-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #fff;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    margin-bottom: 2rem;
-}
-.patients-table th, .patients-table td {
-    padding: 12px 16px;
-    text-align: left;
-}
-.patients-table thead {
-    background: #f5f7fa;
-    color: #333;
-    font-weight: 600;
-}
-.patients-table tbody tr {
-    border-bottom: 1px solid #f0f0f0;
-    transition: background 0.2s;
-    animation: fadeInRow 0.7s cubic-bezier(.68,-0.55,.27,1.55);
-}
-.patients-table tbody tr:hover {
-    background: #f0f7ff;
-}
-.patients-table td {
-    color: #444;
-}
-.action-btn {
-    border: none;
-    background: none;
-    cursor: pointer;
-    margin: 0 4px;
-    font-size: 1.2em;
-    border-radius: 50%;
-    width: 36px; height: 36px;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: background 0.18s, color 0.18s, transform 0.18s;
-}
-.action-btn.edit {
-    color: #1976d2;
-}
-.action-btn.delete {
-    color: #e14c4c;
-}
-.action-btn.edit:hover {
-    background: #eaf7ff;
-    color: #1976d2;
-    transform: scale(1.15) rotate(-8deg);
-}
-.action-btn.delete:hover {
-    background: #ffe1e1;
-    color: #e14c4c;
-    transform: scale(1.15) rotate(8deg);
-}
-@keyframes fadeInRow {
-    0% { opacity:0; transform:translateY(18px) scale(0.98);}
-    100% { opacity:1; transform:translateY(0) scale(1);}
-}
-/* Modal background animation */
-#add-patient-modal {
-    animation: modal-bg-fade-in 0.35s;
-}
-@keyframes modal-bg-fade-in {
-    from { background: rgba(0,0,0,0); }
-    to   { background: rgba(0,0,0,0.55); }
-}
-/* Modal content entrance animation */
-#add-patient-modal .modal-content {
-    animation: modal-content-pop 0.38s cubic-bezier(.23,1.12,.32,1) both;
-}
-@keyframes modal-content-pop {
-    0% {
-        opacity: 0;
-        transform: translateY(60px) scale(0.96);
+    /* Styles existants conservés */
+    #add-patient-btn {
+        background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+        color: #fff;
+        border: none;
+        border-radius: 25px;
+        padding: 12px 32px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        box-shadow: 0 4px 16px rgba(79,140,255,0.13);
+        cursor: pointer;
+        transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
     }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+    #add-patient-btn:hover {
+        background: linear-gradient(90deg, #38c6d9 0%, #4f8cff 100%);
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 8px 24px rgba(56,198,217,0.18);
     }
-}
-/* Optional: subtle animated background pattern */
-#add-patient-modal::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: repeating-radial-gradient(circle at 30% 30%, #38c6d9 0, #38c6d9 2px, transparent 3px, transparent 100px),
-                repeating-radial-gradient(circle at 70% 70%, #4f8cff 0, #4f8cff 2px, transparent 3px, transparent 100px);
-    opacity: 0.12;
-    animation: bg-move 8s linear infinite alternate;
-}
-@keyframes bg-move {
-    0% { background-position: 0 0, 0 0; }
-    100% { background-position: 60px 40px, -40px -60px; }
-}
+    #add-patient-btn i {
+        font-size: 1.2em;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0; top: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.55);
+        justify-content: center;
+        align-items: center;
+        animation: modal-bg-fade-in 0.35s;
+    }
+
+    .modal-content {
+        background: #fff;
+        border-radius: 14px;
+        padding: 36px 32px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        position: relative;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        margin: auto;
+        animation: modal-content-pop 0.38s cubic-bezier(.23,1.12,.32,1) both;
+    }
+    
+    .patients-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    .patients-table th, .patients-table td {
+        padding: 12px 16px;
+        text-align: left;
+    }
+    .patients-table thead {
+        background: #f5f7fa;
+        color: #333;
+        font-weight: 600;
+    }
+    .patients-table tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s;
+        animation: fadeInRow 0.7s cubic-bezier(.68,-0.55,.27,1.55);
+    }
+    .patients-table tbody tr:hover {
+        background: #f0f7ff;
+    }
+    .patients-table td {
+        color: #444;
+    }
+
+    .action-btn {
+        border: none;
+        background: none;
+        cursor: pointer;
+        margin: 0 4px;
+        font-size: 1rem;
+        border-radius: 6px;
+        padding: 8px 12px;
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center;
+        transition: all 0.18s;
+        gap: 6px;
+    }
+    .action-btn.edit {
+        color: #1976d2;
+        background: #e3f2fd;
+    }
+    .action-btn.delete {
+        color: #e14c4c;
+        background: #ffebee;
+    }
+    .action-btn.consult {
+        color: #2e7d32;
+        background: #e8f5e8;
+    }
+    .action-btn:hover {
+        transform: scale(1.05);
+    }
+
+    .step-content {
+        display: none;
+    }
+    .step-content.active {
+        display: block;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+        gap: 20px;
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 20px;
+        border-radius: 25px;
+        background: #f5f5f5;
+        color: #666;
+        transition: all 0.3s;
+    }
+
+    .step.active {
+        background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+        color: white;
+    }
+
+    .step.completed {
+        background: #4caf50;
+        color: white;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 18px;
+    }
+
+    .form-group {
+        flex: 1;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #38c6d9;
+    }
+
+    .btn-group {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    @keyframes fadeInRow {
+        0% { opacity:0; transform:translateY(18px) scale(0.98);}
+        100% { opacity:1; transform:translateY(0) scale(1);}
+    }
+    
+    @keyframes modal-bg-fade-in {
+        from { background: rgba(0,0,0,0); }
+        to   { background: rgba(0,0,0,0.55); }
+    }
+    
+    @keyframes modal-content-pop {
+        0% {
+            opacity: 0;
+            transform: translateY(60px) scale(0.96);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
 </style>
 
 <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
-    <button id="add-patient-btn" class="btn" style="background:linear-gradient(90deg,#38c6d9 0%,#4f8cff 100%);color:#fff;font-weight:600;">
+    <button id="add-patient-btn" class="btn">
         <i class="fas fa-user-plus"></i>
-        Ajouter un patient
+        Nouveau patient + Consultation
     </button>
 </div>
 
 <h2>
-    <img src="https://img.icons8.com/ios-filled/28/38c6d9/list.png" style="vertical-align:middle; margin-right:8px;">
+    <i class="fas fa-list-ul" style="vertical-align:middle; margin-right:8px; color: #38c6d9;"></i>
     Liste des patients
 </h2>
 <div class="table-responsive">
@@ -178,11 +272,14 @@
                 <td>{{ patient.first_name }} {{ patient.last_name }}</td>
                 <td>{{ patient.phone }}</td>
                 <td>{{ patient.get_gender_display }}</td>
-                <td>{{ patient.birth_date }}</td>
+                <td>{{ patient.birth_date|date:"Y-m-d" }}</td>
                 <td>{{ patient.address }}</td>
                 <td>
                     <button class="action-btn edit" title="Modifier" onclick="editPatient(this)">
                         <i class="fas fa-pen"></i> Modifier
+                    </button>
+                    <button class="action-btn consult" title="Nouvelle consultation" onclick="newConsultation(this)">
+                        <i class="fas fa-stethoscope"></i> Consulter
                     </button>
                     <button class="action-btn delete" title="Supprimer" onclick="deletePatient(this)">
                         <i class="fas fa-trash"></i> Supprimer
@@ -191,109 +288,768 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" style="text-align:center;">Aucun patient enregistré</td>
+                <td colspan="7" style="text-align:center; padding: 2rem;">Aucun patient enregistré</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
-<!-- Modale de modification/ajout patient -->
-<div id="add-patient-modal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:500px;">
-        <span class="close" id="close-patient-modal" style="float:right; font-size:2rem; cursor:pointer;">&times;</span>
-        <h2 id="patient-modal-title" style="margin-top:0; font-size:2rem;">
-            <img src="https://img.icons8.com/fluency/40/38c6d9/patient-oxygen-mask.png" style="vertical-align:middle; margin-right:8px;">
-            Ajouter un patient
-        </h2>
-        <form id="add-patient-form" method="post">
+<!-- Modale Patient + Consultation (2 étapes) -->
+<div id="patient-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="close-modal" style="position:absolute; top:10px; right: 20px; font-size:2rem; cursor:pointer; color:#888;">×</span>
+        
+        <div class="step-indicator">
+            <div class="step active" id="step-1-indicator">
+                <i class="fas fa-user"></i><span>Informations Patient</span>
+            </div>
+            <div class="step" id="step-2-indicator">
+                <i class="fas fa-stethoscope"></i><span>Consultation</span>
+            </div>
+        </div>
+
+        <form id="patient-consultation-form" method="post">
             {% csrf_token %}
-            <input type="hidden" id="patient-id" name="patient-id" value="">
-            <div class="input-group" style="margin-bottom:18px;">
-                <label for="first_name">Prénom</label>
-                <input type="text" id="first_name" name="patient-firstname" required style="width:100%;padding:12px; font-size:1.1rem;">
+            <input type="hidden" id="patient-id" name="patient_id">
+            
+            <!-- Étape 1: Informations du patient -->
+            <div id="step-1" class="step-content active">
+                <h2 style="margin-top:0; font-size:1.8rem; text-align:center;">
+                    <i class="fas fa-user-plus"></i> Informations Patient
+                </h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name">Prénom *</label>
+                        <input type="text" id="first_name" name="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Nom *</label>
+                        <input type="text" id="last_name" name="last_name" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">Téléphone *</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Sexe *</label>
+                        <select id="gender" name="gender" required>
+                            <option value="">Sélectionner</option>
+                            <option value="M">Masculin</option>
+                            <option value="F">Féminin</option>
+                            <option value="O">Autre</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="birth_date">Date de naissance *</label>
+                    <input type="date" id="birth_date" name="birth_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="address">Adresse</label>
+                    <textarea id="address" name="address" rows="3"></textarea>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="nextStep()">
+                        Suivant <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
-            <div class="input-group" style="margin-bottom:18px;">
-                <label for="last_name">Nom</label>
-                <input type="text" id="last_name" name="patient-lastname" required style="width:100%;padding:12px; font-size:1.1rem;">
+            
+            <!-- Étape 2: Consultation médicale -->
+            <div id="step-2" class="step-content">
+                <h2 style="margin-top:0; font-size:1.8rem; text-align:center;">
+                    <i class="fas fa-stethoscope"></i> Consultation Médicale
+                </h2>
+                <div class="form-group">
+                    <label for="doctor">Médecin consultant *</label>
+                    <select id="doctor" name="doctor" required>
+                        <option value="">Sélectionner un médecin</option>
+                        {% for doctor in doctors %}
+                        <option value="{{ doctor.id }}">
+                            Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }} - {{ doctor.specialty }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <h3 style="color: #2e7d32; margin: 25px 0 15px 0;">
+                    <i class="fas fa-heartbeat"></i> Signes vitaux
+                </h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="weight">Poids (kg)</label>
+                        <input type="number" id="weight" name="weight" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="height">Taille (cm)</label>
+                        <input type="number" id="height" name="height" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="temperature">Température (°C)</label>
+                        <input type="number" id="temperature" name="temperature" step="0.1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="blood_pressure_systolic">Tension systolique</label>
+                        <input type="number" id="blood_pressure_systolic" name="blood_pressure_systolic">
+                    </div>
+                    <div class="form-group">
+                        <label for="blood_pressure_diastolic">Tension diastolique</label>
+                        <input type="number" id="blood_pressure_diastolic" name="blood_pressure_diastolic">
+                    </div>
+                    <div class="form-group">
+                        <label for="heart_rate">Fréquence cardiaque (bpm)</label>
+                        <input type="number" id="heart_rate" name="heart_rate">
+                    </div>
+                </div>
+                <h3 style="color: #2e7d32; margin: 25px 0 15px 0;">
+                    <i class="fas fa-notes-medical"></i> Informations cliniques
+                </h3>
+                <div class="form-group">
+                    <label for="symptoms">Symptômes *</label>
+                    <textarea id="symptoms" name="symptoms" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="diagnosis">Diagnostic</label>
+                    <textarea id="diagnosis" name="diagnosis" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="treatment">Traitement prescrit</label>
+                    <textarea id="treatment" name="treatment" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes additionnelles</label>
+                    <textarea id="notes" name="notes" rows="2"></textarea>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="previousStep()">
+                        <i class="fas fa-arrow-left"></i> Précédent
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Enregistrer Tout
+                    </button>
+                </div>
             </div>
-            <div class="input-group" style="margin-bottom:18px;">
-                <label for="phone">Téléphone</label>
-                <input type="tel" id="phone" name="patient-phone" required style="width:100%;padding:12px; font-size:1.1rem;">
-            </div>
-            <div class="input-group" style="margin-bottom:18px;">
-                <label for="gender">Sexe</label>
-                <select id="gender" name="patient-gender" required style="width:100%;padding:12px; font-size:1.1rem;">
-                    <option value="">Sélectionner</option>
-                    <option value="M">Masculin</option>
-                    <option value="F">Féminin</option>
-                </select>
-            </div>
-            <div class="input-group" style="margin-bottom:18px;">
-                <label for="birth_date">Date de naissance</label>
-                <input type="date" id="birth_date" name="patient-birthdate" required style="width:100%;padding:12px; font-size:1.1rem;">
-            </div>
-            <div class="input-group" style="margin-bottom:24px;">
-                <label for="address">Adresse</label>
-                <textarea id="address" name="patient-address" style="width:100%;padding:12px; font-size:1.1rem;"></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary" style="width:100%; font-size:1.15rem; padding:14px 0;">Enregistrer</button>
         </form>
     </div>
 </div>
 
+<!-- Modale consultation seule (pour patients existants) -->
+<div id="consultation-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeConsultationModal()" style="position:absolute; top:10px; right: 20px; font-size:2rem; cursor:pointer; color:#888;">×</span>
+        <h2 style="margin-top:0; font-size:1.8rem;">
+            <i class="fas fa-stethoscope"></i> Nouvelle Consultation
+        </h2>
+        <div id="patient-info" class="consultation-summary" style="background:#f8f9fa; border-radius:8px; padding:20px; margin:20px 0;"></div>
+        
+        <form id="consultation-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" id="consult-patient-id" name="patient_id">
+            
+            <div class="form-group">
+                <label for="consult-doctor">Médecin consultant *</label>
+                <select id="consult-doctor" name="doctor" required>
+                    <option value="">Sélectionner un médecin</option>
+                    {% for doctor in doctors %}
+                    <option value="{{ doctor.id }}">
+                        Dr. {{ doctor.user.first_name }} {{ doctor.user.last_name }} - {{ doctor.specialty }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <h3 style="color: #2e7d32; margin: 25px 0 15px 0;">
+                <i class="fas fa-heartbeat"></i> Signes vitaux
+            </h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="consult-weight">Poids (kg)</label>
+                    <input type="number" id="consult-weight" name="weight" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="consult-height">Taille (cm)</label>
+                    <input type="number" id="consult-height" name="height" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="consult-temperature">Température (°C)</label>
+                    <input type="number" id="consult-temperature" name="temperature" step="0.1">
+                </div>
+            </div>
+            <h3 style="color: #2e7d32; margin: 25px 0 15px 0;">
+                <i class="fas fa-notes-medical"></i> Informations cliniques
+            </h3>
+            <div class="form-group">
+                <label for="consult-symptoms">Symptômes *</label>
+                <textarea id="consult-symptoms" name="symptoms" rows="3" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="consult-diagnosis">Diagnostic</label>
+                <textarea id="consult-diagnosis" name="diagnosis" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="consult-treatment">Traitement prescrit</label>
+                <textarea id="consult-treatment" name="treatment" rows="3"></textarea>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary" onclick="closeConsultationModal()">Annuler</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Enregistrer Consultation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 <script>
-// Ouvre la modale d'ajout
-document.getElementById('add-patient-btn').onclick = function() {
-    document.getElementById('add-patient-form').reset();
-    document.getElementById('patient-id').value = '';
-    document.getElementById('patient-modal-title').innerHTML = '<img src="https://img.icons8.com/fluency/40/38c6d9/patient-oxygen-mask.png" style="vertical-align:middle; margin-right:8px;">Ajouter un patient';
-    document.getElementById('add-patient-modal').style.display = 'block';
-};
-// Ferme la modale
-document.getElementById('close-patient-modal').onclick = function() {
-    document.getElementById('add-patient-modal').style.display = 'none';
-};
-window.onclick = function(event) {
-    var modal = document.getElementById('add-patient-modal');
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-};
+    // Variables globales
+let isEditMode = false;
 
-// Fonction pour modifier un patient
-function editPatient(btn) {
-    var tr = btn.closest('tr');
-    document.getElementById('patient-id').value = tr.getAttribute('data-patient-id');
-    document.getElementById('first_name').value = tr.children[1].textContent.split(' ')[0];
-    document.getElementById('last_name').value = tr.children[1].textContent.split(' ').slice(1).join(' ');
-    document.getElementById('phone').value = tr.children[2].textContent;
-    document.getElementById('gender').value = tr.children[3].textContent.startsWith('M') ? 'M' : 'F';
-    document.getElementById('birth_date').value = tr.children[4].textContent;
-    document.getElementById('address').value = tr.children[5].textContent;
-    document.getElementById('patient-modal-title').innerHTML = '<img src="https://img.icons8.com/fluency/40/38c6d9/patient-oxygen-mask.png" style="vertical-align:middle; margin-right:8px;">Modifier le patient';
-    document.getElementById('add-patient-modal').style.display = 'block';
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded'); // Debug
+    
+    // Sélecteurs d'éléments
+    const patientModal = document.getElementById('patient-modal');
+    const consultationModal = document.getElementById('consultation-modal');
+    const mainForm = document.getElementById('patient-consultation-form');
+    const consultationForm = document.getElementById('consultation-form');
+    const addPatientBtn = document.getElementById('add-patient-btn');
+    const closeModalBtn = document.getElementById('close-modal');
+    
+    // Gestionnaires d'événements
+    if (addPatientBtn) {
+        addPatientBtn.addEventListener('click', function() {
+            console.log('Add patient button clicked'); // Debug
+            openModal('new');
+        });
+    }
+    
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeModal);
+    }
+    
+    // Fermer modal en cliquant sur le fond
+    window.addEventListener('click', function(event) {
+        if (event.target == patientModal) {
+            closeModal();
+        }
+        if (event.target == consultationModal) {
+            closeConsultationModal();
+        }
+    });
+    
+    // Gestionnaire de soumission des formulaires
+    if (mainForm) {
+        mainForm.addEventListener('submit', handleFormSubmit);
+    }
+    if (consultationForm) {
+        consultationForm.addEventListener('submit', handleConsultationSubmit);
+    }
+});
+
+// Fonctions de gestion des modales
+function openModal(mode) {
+    console.log('Opening modal in mode:', mode); // Debug
+    resetForm();
+    isEditMode = (mode === 'edit');
+    
+    const patientModal = document.getElementById('patient-modal');
+    const step2 = document.getElementById('step-2');
+    const step2Indicator = document.getElementById('step-2-indicator');
+    const btnGroup = document.querySelector('#step-1 .btn-group');
+    
+    if (isEditMode) {
+        // Mode édition - cacher l'étape 2
+        step2.style.display = 'none';
+        step2Indicator.style.display = 'none';
+        btnGroup.innerHTML = `
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Enregistrer les modifications</button>
+        `;
+    } else {
+        // Mode nouveau patient
+        step2.style.display = 'block';
+        step2Indicator.style.display = 'flex';
+        btnGroup.innerHTML = `
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+            <button type="button" class="btn btn-primary" onclick="nextStep()">Suivant <i class="fas fa-arrow-right"></i></button>
+        `;
+    }
+    
+    patientModal.style.display = 'flex';
 }
 
-// Fonction pour supprimer un patient
-function deletePatient(btn) {
-    if (!confirm("Voulez-vous vraiment supprimer ce patient ?")) return;
-    var tr = btn.closest('tr');
-    var patientId = tr.getAttribute('data-patient-id');
-    fetch(`/patients/delete/${patientId}/`, {
+function closeModal() {
+    const patientModal = document.getElementById('patient-modal');
+    patientModal.style.display = 'none';
+}
+
+function closeConsultationModal() {
+    const consultationModal = document.getElementById('consultation-modal');
+    consultationModal.style.display = 'none';
+    document.getElementById('consultation-form').reset();
+}
+
+function resetForm() {
+    const mainForm = document.getElementById('patient-consultation-form');
+    mainForm.reset();
+    document.getElementById('patient-id').value = '';
+    
+    // Réinitialiser les étapes
+    document.getElementById('step-1').classList.add('active');
+    document.getElementById('step-2').classList.remove('active');
+    document.getElementById('step-1-indicator').classList.add('active');
+    document.getElementById('step-1-indicator').classList.remove('completed');
+    document.getElementById('step-2-indicator').classList.remove('active');
+}
+
+// Navigation du formulaire en 2 étapes
+function nextStep() {
+    if (!validateStep1()) return;
+    
+    document.getElementById('step-1').classList.remove('active');
+    document.getElementById('step-2').classList.add('active');
+    document.getElementById('step-1-indicator').classList.remove('active');
+    document.getElementById('step-1-indicator').classList.add('completed');
+    document.getElementById('step-2-indicator').classList.add('active');
+}
+
+function previousStep() {
+    document.getElementById('step-2').classList.remove('active');
+    document.getElementById('step-1').classList.add('active');
+    document.getElementById('step-2-indicator').classList.remove('active');
+    document.getElementById('step-1-indicator').classList.remove('completed');
+    document.getElementById('step-1-indicator').classList.add('active');
+}
+
+function validateStep1() {
+    const requiredFields = ['first_name', 'last_name', 'phone', 'gender', 'birth_date'];
+    let isValid = true;
+    
+    for (const fieldId of requiredFields) {
+        const field = document.getElementById(fieldId);
+        if (!field.value.trim()) {
+            field.style.borderColor = '#e14c4c';
+            isValid = false;
+        } else {
+            field.style.borderColor = '#e0e0e0';
+        }
+    }
+    
+    if (!isValid) {
+        alert('Veuillez remplir tous les champs obligatoires (*)');
+    }
+    return isValid;
+}
+
+// Actions sur les patients
+function editPatient(button) {
+    console.log('Edit patient clicked'); // Debug
+    const row = button.closest('tr');
+    const patientId = row.dataset.patientId;
+    const cells = row.cells;
+    
+    // Ouvrir la modal en mode édition
+    openModal('edit');
+    
+    // Remplir les champs avec les données du patient
+    const fullName = cells[1].textContent.trim().split(' ');
+    
+    document.getElementById('patient-id').value = patientId;
+    document.getElementById('first_name').value = fullName.slice(0, -1).join(' ');
+    document.getElementById('last_name').value = fullName.slice(-1).join(' ');
+    document.getElementById('phone').value = cells[2].textContent.trim();
+    
+    // Convertir le texte du genre en valeur
+    const genderText = cells[3].textContent.trim();
+    let genderValue = '';
+    if (genderText === 'Masculin') genderValue = 'M';
+    else if (genderText === 'Féminin') genderValue = 'F';
+    else genderValue = 'O';
+    document.getElementById('gender').value = genderValue;
+    
+    document.getElementById('birth_date').value = cells[4].textContent.trim();
+    document.getElementById('address').value = cells[5].textContent.trim();
+}
+
+function newConsultation(button) {
+    console.log('New consultation clicked'); // Debug
+    const row = button.closest('tr');
+    const patientId = row.dataset.patientId;
+    const cells = row.cells;
+    
+    // Afficher les informations du patient
+    const patientInfoHtml = `
+        <h4><i class="fas fa-user"></i> ${cells[1].textContent.trim()}</h4>
+        <p><strong>Date de naissance:</strong> ${cells[4].textContent.trim()}</p>
+        <p><strong>Téléphone:</strong> ${cells[2].textContent.trim()}</p>
+    `;
+    document.getElementById('patient-info').innerHTML = patientInfoHtml;
+    document.getElementById('consult-patient-id').value = patientId;
+    
+    // Ouvrir la modal de consultation
+    const consultationModal = document.getElementById('consultation-modal');
+    consultationModal.style.display = 'flex';
+}
+
+function deletePatient(button) {
+    console.log('Delete patient clicked'); // Debug
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce patient et toutes ses consultations ? Cette action est irréversible.')) {
+        return;
+    }
+    
+    const row = button.closest('tr');
+    const patientId = row.dataset.patientId;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    showLoader(button);
+    
+    fetch(`/gestion/patients/delete/${patientId}/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
         }
     })
-    .then(resp => resp.json())
+    .then(response => response.json())
     .then(data => {
+        hideLoader(button);
         if (data.success) {
-            tr.remove();
+            row.style.transition = 'opacity 0.5s';
+            row.style.opacity = '0';
+            setTimeout(() => {
+                row.remove();
+                updateTableNumbers();
+            }, 500);
+            showMessage('Patient supprimé avec succès.', 'success');
         } else {
-            alert("Erreur lors de la suppression.");
+            showMessage('Erreur: ' + (data.error || 'Erreur inconnue'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoader(button);
+        console.error('Error:', error);
+        showMessage('Erreur de communication.', 'error');
+    });
+}
+
+// Gestion de la soumission des formulaires
+function handleFormSubmit(event) {
+    event.preventDefault();
+    console.log('Form submitted'); // Debug
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    // Validation finale
+    if (!isEditMode && !validateConsultationForm()) {
+        return;
+    }
+    
+    showLoader(submitBtn);
+    
+    fetch("{% url 'save_patient_and_consultation' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoader(submitBtn);
+        if (data.success) {
+            showMessage(data.message, 'success');
+            closeModal();
+            
+            if (!isEditMode) {
+                // Nouveau patient - ajouter à la table
+                addPatientToTable(data.patient_id, formData);
+            } else {
+                // Modification - mettre à jour la ligne existante
+                updatePatientInTable(formData);
+            }
+        } else {
+            showMessage('Erreur: ' + (data.error || 'Erreur inconnue'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoader(submitBtn);
+        console.error('Error:', error);
+        showMessage('Erreur de communication.', 'error');
+    });
+}
+
+function handleConsultationSubmit(event) {
+    event.preventDefault();
+    console.log('Consultation form submitted'); // Debug
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    if (!validateConsultationFormSimple()) {
+        return;
+    }
+    
+    showLoader(submitBtn);
+    
+    fetch("{% url 'add_consultation' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoader(submitBtn);
+        if (data.success) {
+            showMessage(data.message, 'success');
+            closeConsultationModal();
+        } else {
+            showMessage('Erreur: ' + (data.error || 'Erreur inconnue'), 'error');
+        }
+    })
+    .catch(error => {
+        hideLoader(submitBtn);
+        console.error('Error:', error);
+        showMessage('Erreur de communication.', 'error');
+    });
+}
+
+// Validation des formulaires
+function validateConsultationForm() {
+    const requiredFields = ['doctor', 'symptoms'];
+    let isValid = true;
+    
+    for (const fieldId of requiredFields) {
+        const field = document.getElementById(fieldId);
+        if (!field.value.trim()) {
+            field.style.borderColor = '#e14c4c';
+            isValid = false;
+        } else {
+            field.style.borderColor = '#e0e0e0';
+        }
+    }
+    
+    if (!isValid) {
+        showMessage('Veuillez remplir tous les champs obligatoires de la consultation', 'error');
+    }
+    return isValid;
+}
+
+function validateConsultationFormSimple() {
+    const requiredFields = ['consult-doctor', 'consult-symptoms'];
+    let isValid = true;
+    
+    for (const fieldId of requiredFields) {
+        const field = document.getElementById(fieldId);
+        if (!field.value.trim()) {
+            field.style.borderColor = '#e14c4c';
+            isValid = false;
+        } else {
+            field.style.borderColor = '#e0e0e0';
+        }
+    }
+    
+    if (!isValid) {
+        showMessage('Veuillez remplir tous les champs obligatoires', 'error');
+    }
+    return isValid;
+}
+
+// Fonctions utilitaires pour l'interface
+function showLoader(button) {
+    if (button) {
+        button.disabled = true;
+        const originalText = button.innerHTML;
+        button.setAttribute('data-original-text', originalText);
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement...';
+    }
+}
+
+function hideLoader(button) {
+    if (button) {
+        button.disabled = false;
+        const originalText = button.getAttribute('data-original-text');
+        if (originalText) {
+            button.innerHTML = originalText;
+        }
+    }
+}
+
+function showMessage(message, type = 'info') {
+    // Créer ou récupérer le conteneur de messages
+    let messageContainer = document.getElementById('message-container');
+    if (!messageContainer) {
+        messageContainer = document.createElement('div');
+        messageContainer.id = 'message-container';
+        messageContainer.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+        `;
+        document.body.appendChild(messageContainer);
+    }
+    
+    // Créer le message
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `alert alert-${type}`;
+    messageDiv.style.cssText = `
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease-out;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        ${type === 'success' ? 'background: #d4edda; color: #155724; border: 1px solid #c3e6cb;' : ''}
+        ${type === 'error' ? 'background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;' : ''}
+        ${type === 'info' ? 'background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;' : ''}
+    `;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : 
+                 type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    
+    messageDiv.innerHTML = `
+        <i class="fas ${icon}"></i>
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;font-size:18px;cursor:pointer;margin-left:auto;padding:0;">×</button>
+    `;
+    
+    messageContainer.appendChild(messageDiv);
+    
+    // Supprimer automatiquement après 5 secondes
+    setTimeout(() => {
+        if (messageDiv.parentElement) {
+            messageDiv.style.animation = 'slideOutRight 0.3s ease-in';
+            setTimeout(() => messageDiv.remove(), 300);
+        }
+    }, 5000);
+}
+
+// Gestion de la table des patients
+function addPatientToTable(patientId, formData) {
+    const tableBody = document.querySelector('.patients-table tbody');
+    const emptyRow = tableBody.querySelector('td[colspan="7"]');
+    
+    if (emptyRow) {
+        emptyRow.parentElement.remove();
+    }
+    
+    const newRow = document.createElement('tr');
+    newRow.setAttribute('data-patient-id', patientId);
+    
+    const genderDisplay = getGenderDisplay(formData.get('gender'));
+    const rowNumber = tableBody.children.length + 1;
+    
+    newRow.innerHTML = `
+        <td>${rowNumber}</td>
+        <td>${formData.get('first_name')} ${formData.get('last_name')}</td>
+        <td>${formData.get('phone')}</td>
+        <td>${genderDisplay}</td>
+        <td>${formData.get('birth_date')}</td>
+        <td>${formData.get('address') || ''}</td>
+        <td>
+            <button class="action-btn edit" title="Modifier" onclick="editPatient(this)">
+                <i class="fas fa-pen"></i> Modifier
+            </button>
+            <button class="action-btn consult" title="Nouvelle consultation" onclick="newConsultation(this)">
+                <i class="fas fa-stethoscope"></i> Consulter
+            </button>
+            <button class="action-btn delete" title="Supprimer" onclick="deletePatient(this)">
+                <i class="fas fa-trash"></i> Supprimer
+            </button>
+        </td>
+    `;
+    
+    tableBody.appendChild(newRow);
+    
+    // Animation d'apparition
+    newRow.style.opacity = '0';
+    newRow.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+        newRow.style.transition = 'all 0.3s ease';
+        newRow.style.opacity = '1';
+        newRow.style.transform = 'translateY(0)';
+    }, 100);
+}
+
+function updatePatientInTable(formData) {
+    const patientId = formData.get('patient_id');
+    const row = document.querySelector(`tr[data-patient-id="${patientId}"]`);
+    
+    if (row) {
+        const cells = row.cells;
+        const genderDisplay = getGenderDisplay(formData.get('gender'));
+        
+        cells[1].textContent = `${formData.get('first_name')} ${formData.get('last_name')}`;
+        cells[2].textContent = formData.get('phone');
+        cells[3].textContent = genderDisplay;
+        cells[4].textContent = formData.get('birth_date');
+        cells[5].textContent = formData.get('address') || '';
+        
+        // Animation de mise à jour
+        row.style.background = '#e8f5e8';
+        setTimeout(() => {
+            row.style.transition = 'background 0.5s ease';
+            row.style.background = '';
+        }, 1000);
+    }
+}
+
+function updateTableNumbers() {
+    const rows = document.querySelectorAll('.patients-table tbody tr');
+    rows.forEach((row, index) => {
+        const firstCell = row.cells[0];
+        if (firstCell && !firstCell.hasAttribute('colspan')) {
+            firstCell.textContent = index + 1;
         }
     });
 }
+
+function getGenderDisplay(gender) {
+    switch(gender) {
+        case 'M': return 'Masculin';
+        case 'F': return 'Féminin';
+        case 'O': return 'Autre';
+        default: return '';
+    }
+}
+
+// Ajouter les styles pour les animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
 </script>
-{% endblock %}
+{% endblock patients_content %}

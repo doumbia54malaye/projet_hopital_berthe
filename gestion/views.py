@@ -2,7 +2,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
-from .models import Patient, Doctor, Appointment, User
+from .models import *
 from django.contrib.auth.decorators import login_required
 from datetime import datetime, timedelta, date
 import json
@@ -10,6 +10,14 @@ from django.views.decorators.csrf import csrf_exempt
 import logging
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
+from .forms import *
+from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from decimal import Decimal, InvalidOperation
+
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -46,22 +54,6 @@ def dashboard(request):
     return render(request, 'gestion/dashboard.html', context)
 
 @login_required
-def patient_management(request):
-    patients = Patient.objects.all()
-    # Ajout de days_of_week
-    days_of_week = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
-    context = {
-        'patients': patients,
-        'days_of_week': days_of_week # Ligne ajoutée
-    }
-    return render(request, 'gestion/patients.html', context)
-
-
-
-
-
-
-@login_required
 def doctor_management(request):
     doctors = Doctor.objects.all()
     # Ajout de days_of_week
@@ -71,15 +63,6 @@ def doctor_management(request):
         'days_of_week': days_of_week # Ligne ajoutée
     }
     return render(request, 'gestion/doctors.html', context)
-
-
-
-# views.py
-from django.shortcuts import redirect
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from .models import Appointment, Patient, Doctor
-from datetime import datetime
 
 @login_required
 def create_appointment(request):
@@ -143,26 +126,6 @@ def calendar_view(request):
     }
     return render(request, 'gestion/calendar.html', context)
 
-@csrf_exempt
-@login_required
-def add_patient(request):
-    # Log des données reçues pour debug
-    print("POST data received:", dict(request.POST))
-
-    if request.method == 'POST':
-        try:
-            patient = Patient.objects.create(
-                first_name=request.POST.get('patient-firstname'),
-                last_name=request.POST.get('patient-lastname'),
-                phone=request.POST.get('patient-phone'),
-                gender=request.POST.get('patient-gender'),
-                birth_date=request.POST.get('patient-birthdate'),
-                address=request.POST.get('patient-address')
-            )
-            return JsonResponse({'success': True, 'patient_id': patient.id})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
 
 @csrf_exempt
 @login_required
@@ -338,3 +301,295 @@ def update_appointment(request, appointment_id):
     }
     
     return JsonResponse({'success': True, 'appointment': appointment_data})
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#gestion des patients et consultations
+@login_required
+def patient_management(request):
+    """Vue principale pour la gestion des patients"""
+    patients = Patient.objects.all().order_by('-created_at')
+    # Récupérer tous les utilisateurs avec le rôle 'doctor'
+    doctors = Doctor.objects.select_related('user').all()
+    
+    context = {
+        'patients': patients,
+        'doctors': doctors,
+    }
+    return render(request, 'gestion/patients.html', context)
+
+@csrf_exempt
+@login_required
+def save_patient_and_consultation(request):
+    """Sauvegarde patient et consultation (nouveau patient + consultation OU modification patient)"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+    
+    try:
+        with transaction.atomic():
+            patient_id = request.POST.get('patient_id')
+            
+            # Données patient
+            patient_data = {
+                'first_name': request.POST.get('first_name', '').strip(),
+                'last_name': request.POST.get('last_name', '').strip(),
+                'phone': request.POST.get('phone', '').strip(),
+                'gender': request.POST.get('gender'),
+                'birth_date': request.POST.get('birth_date'),
+                'address': request.POST.get('address', '').strip(),
+            }
+            
+            # Validation des champs obligatoires
+            required_fields = ['first_name', 'last_name', 'phone', 'gender', 'birth_date']
+            missing_fields = [field for field in required_fields if not patient_data.get(field)]
+            if missing_fields:
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'Champs obligatoires manquants: {", ".join(missing_fields)}'
+                })
+            
+            # Validation de la date de naissance
+            try:
+                datetime.strptime(patient_data['birth_date'], '%Y-%m-%d')
+            except ValueError:
+                return JsonResponse({'success': False, 'error': 'Format de date invalide'})
+            
+            # Créer ou modifier le patient
+            if patient_id:  # Modification d'un patient existant
+                patient = get_object_or_404(Patient, id=patient_id)
+                for key, value in patient_data.items():
+                    setattr(patient, key, value)
+                patient.save()
+                message = 'Patient modifié avec succès'
+                
+                # Si c'est juste une modification patient, on s'arrête là
+                if not request.POST.get('symptoms'):  # Pas de données de consultation
+                    return JsonResponse({'success': True, 'message': message})
+            else:  # Nouveau patient
+                patient = Patient.objects.create(**patient_data)
+                message = 'Patient et consultation créés avec succès'
+            
+            # Données consultation (seulement si des symptômes sont fournis)
+            symptoms = request.POST.get('symptoms', '').strip()
+            if symptoms:  # Il y a des données de consultation
+                doctor_id = request.POST.get('doctor')
+                if not doctor_id:
+                    return JsonResponse({'success': False, 'error': 'Médecin consultant requis pour la consultation'})
+                
+                doctor = get_object_or_404(Doctor, id=doctor_id)
+                
+                # Créer la consultation
+                consultation_data = {
+                    'patient': patient,
+                    'doctor': doctor,
+                    'symptoms': symptoms,
+                    'diagnosis': request.POST.get('diagnosis', '').strip(),
+                    'treatment': request.POST.get('treatment', '').strip(),
+                    'notes': request.POST.get('notes', '').strip(),
+                    'consultation_date': timezone.now(),
+                }
+                
+                # Signes vitaux (optionnels) - conversion en Decimal pour les champs DecimalField
+                vital_signs_data = {}
+                
+                # Champs Decimal
+                decimal_fields = ['weight', 'height', 'temperature']
+                for field in decimal_fields:
+                    value = request.POST.get(field)
+                    if value:
+                        try:
+                            vital_signs_data[field] = Decimal(str(value))
+                        except (InvalidOperation, ValueError):
+                            # Ignorer les valeurs invalides plutôt que de faire échouer toute l'opération
+                            pass
+                
+                # Champs Integer
+                integer_fields = ['blood_pressure_systolic', 'blood_pressure_diastolic', 'heart_rate']
+                for field in integer_fields:
+                    value = request.POST.get(field)
+                    if value:
+                        try:
+                            vital_signs_data[field] = int(value)
+                        except ValueError:
+                            # Ignorer les valeurs invalides
+                            pass
+                
+                consultation_data.update(vital_signs_data)
+                Consultation.objects.create(**consultation_data)
+            
+            return JsonResponse({'success': True, 'message': message, 'patient_id': patient.id})
+            
+    except ValidationError as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    except Exception as e:
+        print(f"Erreur lors de la sauvegarde: {e}")  # Pour le debug
+        return JsonResponse({'success': False, 'error': 'Erreur interne du serveur'})
+
+@csrf_exempt
+@login_required
+def add_consultation(request):
+    """Ajouter une consultation à un patient existant"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+    
+    try:
+        patient_id = request.POST.get('patient_id')
+        doctor_id = request.POST.get('doctor')
+        symptoms = request.POST.get('symptoms', '').strip()
+        
+        # Validations
+        if not patient_id:
+            return JsonResponse({'success': False, 'error': 'ID patient manquant'})
+        if not doctor_id:
+            return JsonResponse({'success': False, 'error': 'Médecin consultant requis'})
+        if not symptoms:
+            return JsonResponse({'success': False, 'error': 'Symptômes requis'})
+        
+        patient = get_object_or_404(Patient, id=patient_id)
+        doctor = get_object_or_404(Doctor, id=doctor_id)
+        
+        # Créer la consultation
+        consultation_data = {
+            'patient': patient,
+            'doctor': doctor,
+            'symptoms': symptoms,
+            'diagnosis': request.POST.get('diagnosis', '').strip(),
+            'treatment': request.POST.get('treatment', '').strip(),
+            'notes': request.POST.get('notes', '').strip(),
+            'consultation_date': timezone.now(),
+        }
+        
+        # Signes vitaux (optionnels)
+        vital_signs_data = {}
+        
+        # Champs Decimal
+        decimal_fields = ['weight', 'height', 'temperature']
+        for field in decimal_fields:
+            value = request.POST.get(field)
+            if value:
+                try:
+                    vital_signs_data[field] = Decimal(str(value))
+                except (InvalidOperation, ValueError):
+                    pass
+        
+        # Champs Integer
+        integer_fields = ['blood_pressure_systolic', 'blood_pressure_diastolic', 'heart_rate']
+        for field in integer_fields:
+            value = request.POST.get(field)
+            if value:
+                try:
+                    vital_signs_data[field] = int(value)
+                except ValueError:
+                    pass
+        
+        consultation_data.update(vital_signs_data)
+        consultation = Consultation.objects.create(**consultation_data)
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Consultation créée avec succès',
+            'consultation_id': consultation.id
+        })
+        
+    except Exception as e:
+        print(f"Erreur lors de la création de consultation: {e}")
+        return JsonResponse({'success': False, 'error': 'Erreur interne du serveur'})
+
+@csrf_exempt
+@login_required
+def delete_patient(request, patient_id):
+    """Supprimer un patient et toutes ses consultations"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+    
+    try:
+        patient = get_object_or_404(Patient, id=patient_id)
+        patient_name = f"{patient.first_name} {patient.last_name}"
+        
+        # Django supprimera automatiquement les consultations liées grâce aux foreign keys
+        patient.delete()
+        
+        return JsonResponse({
+            'success': True, 
+            'message': f'Patient {patient_name} supprimé avec succès'
+        })
+        
+    except Exception as e:
+        print(f"Erreur lors de la suppression: {e}")
+        return JsonResponse({'success': False, 'error': 'Erreur lors de la suppression'})
+
+# Vue optionnelle pour récupérer les détails d'un patient (si besoin)
+@login_required
+def get_patient_details(request, patient_id):
+    """Récupérer les détails d'un patient en JSON"""
+    try:
+        patient = get_object_or_404(Patient, id=patient_id)
+        data = {
+            'id': patient.id,
+            'first_name': patient.first_name,
+            'last_name': patient.last_name,
+            'phone': patient.phone,
+            'gender': patient.gender,
+            'birth_date': patient.birth_date.strftime('%Y-%m-%d') if patient.birth_date else '',
+            'address': patient.address,
+        }
+        return JsonResponse({'success': True, 'patient': data})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+# Vue pour récupérer l'historique des consultations d'un patient
+@login_required
+def patient_consultations(request, patient_id):
+    """Récupérer l'historique des consultations d'un patient"""
+    try:
+        patient = get_object_or_404(Patient, id=patient_id)
+        consultations = Consultation.objects.filter(patient=patient).select_related('doctor__user').order_by('-consultation_date')
+        
+        consultations_data = []
+        for consultation in consultations:
+            consultations_data.append({
+                'id': consultation.id,
+                'date': consultation.consultation_date.strftime('%Y-%m-%d %H:%M'),
+                'doctor': f"Dr. {consultation.doctor.user.first_name} {consultation.doctor.user.last_name}",
+                'specialty': consultation.doctor.specialty,
+                'symptoms': consultation.symptoms,
+                'diagnosis': consultation.diagnosis,
+                'treatment': consultation.treatment,
+                'weight': str(consultation.weight) if consultation.weight else None,
+                'height': str(consultation.height) if consultation.height else None,
+                'temperature': str(consultation.temperature) if consultation.temperature else None,
+                'blood_pressure': consultation.blood_pressure,
+                'heart_rate': consultation.heart_rate,
+                'bmi': consultation.bmi,
+            })
+        
+        return JsonResponse({
+            'success': True, 
+            'patient': f"{patient.first_name} {patient.last_name}",
+            'consultations': consultations_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+# Vue pour obtenir la liste des médecins (utile pour les select AJAX)
+@login_required
+def get_doctors_list(request):
+    """Récupérer la liste des médecins disponibles"""
+    try:
+        doctors = Doctor.objects.select_related('user').all()
+        doctors_data = []
+        for doctor in doctors:
+            doctors_data.append({
+                'id': doctor.id,
+                'name': f"Dr. {doctor.user.first_name} {doctor.user.last_name}",
+                'specialty': doctor.specialty,
+                'phone': doctor.user.phone,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'doctors': doctors_data
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
