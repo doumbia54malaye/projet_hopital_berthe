@@ -1,7 +1,8 @@
 # models.py
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.utils import timezone
+from django.utils import timezone 
+from datetime import date
 
 class User(AbstractUser):
     ROLE_CHOICES = (
@@ -30,8 +31,17 @@ class Patient(models.Model):
     address = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def age(self):
+        if not self.birth_date:
+            return None # Pas de date de naissance, pas d'âge
+        today = date.today()
+        # Calcul simple de l'âge
+        return today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+    
+    
 
 class Doctor(models.Model):
     user = models.OneToOneField(

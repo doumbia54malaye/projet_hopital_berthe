@@ -7,12 +7,12 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
      # Gestion des patients et consultations
     path('patients/', views.patient_management, name='patients'),
-    path('patients/save/', views.save_patient_and_consultation, name='save_patient_and_consultation'),
-    path('consultations/add/', views.add_consultation, name='add_consultation'),
-    path('patients/delete/<int:patient_id>/', views.delete_patient, name='delete_patient'),
-    
+    path('api/patient/save/', views.save_patient_and_consultation, name='save_patient_and_consultation'),
+    path('api/consultation/add/', views.add_consultation, name='add_consultation'),
+    path('api/patient/<int:patient_id>/delete/', views.delete_patient, name='delete_patient'),
+    path('api/patient/<int:patient_id>/details/', views.get_patient_details, name='get_patient_details'),
     # URLs optionnelles pour des fonctionnalités avancées
-    path('patients/<int:patient_id>/details/', views.get_patient_details, name='get_patient_details'),
+    path('api/patient/<int:patient_id>/data/', views.get_patient_data_for_edit, name='get_patient_data_for_edit'),
     path('patients/<int:patient_id>/consultations/', views.patient_consultations, name='patient_consultations'),
     path('api/doctors/', views.get_doctors_list, name='get_doctors_list'),
     path('doctors/', views.doctor_management, name='doctors'),
