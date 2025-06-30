@@ -168,56 +168,73 @@ def add_doctor(request):
     logger.warning("Méthode non autorisée pour add_doctor: %s", request.method)
     return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
 
+logger = logging.getLogger(__name__)
+
 @csrf_exempt
 @login_required
 def add_appointment(request):
-    if request.method == 'POST':
-        try:
-            # Accepte les deux formats de noms de champs (patients.html et appointments.html)
-            patient_id = (
-                request.POST.get('patient_id') or
-                request.POST.get('appointment-patient')
-            )
-            doctor_id = (
-                request.POST.get('doctor') or
-                request.POST.get('appointment-doctor')
-            )
-            date_str = (
-                request.POST.get('date') or
-                request.POST.get('appointment-date')
-            )
-            time_str = (
-                request.POST.get('time') or
-                request.POST.get('time-slot')
-            )
-            reason = (
-                request.POST.get('reason') or
-                request.POST.get('appointment-reason')
-            )
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Méthode non autorisée'}, status=405)
 
-            if not all([patient_id, doctor_id, date_str, time_str, reason]):
-                return JsonResponse({'success': False, 'message': 'Tous les champs sont requis.'})
+    try:
+        # Récupérer les données envoyées par le formulaire AJAX
+        patient_id = request.POST.get('patient_id')
+        doctor_id = request.POST.get('doctor')
+        date_str = request.POST.get('date')
+        time_str = request.POST.get('time')
+        reason = request.POST.get('reason')
 
-            doctor = Doctor.objects.get(id=doctor_id)
-            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-            time_obj = datetime.strptime(time_str, '%H:%M').time()
+        # === LOG DE DÉBOGAGE ESSENTIEL ===
+        # Ceci affichera dans votre console serveur exactement ce qui a été reçu.
+        logger.info(f"Tentative d'ajout de RDV. Données reçues: {request.POST.dict()}")
 
-            # Vérifier si le créneau est encore disponible
-            if Appointment.objects.filter(doctor=doctor, date=date_obj, time=time_obj).exists():
-                return JsonResponse({'success': False, 'message': 'Ce créneau est déjà réservé.'})
+        # Vérification plus stricte
+        if not all([patient_id, doctor_id, date_str, time_str, reason]):
+            missing_fields = [
+                field for field, value in {
+                    "patient_id": patient_id, "doctor": doctor_id, 
+                    "date": date_str, "time": time_str, "reason": reason
+                }.items() if not value
+            ]
+            logger.error(f"Échec de création de RDV. Champs manquants: {missing_fields}")
+            # Le message d'erreur est plus précis maintenant
+            return JsonResponse({
+                'success': False, 
+                'message': f'Champ(s) manquant(s) : {", ".join(missing_fields)}'
+            }, status=400)
 
-            Appointment.objects.create(
-                patient_id=patient_id,
-                doctor=doctor,
-                date=date_obj,
-                time=time_obj,
-                reason=reason
-            )
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
-    return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
+        # Conversion et validation des données
+        doctor = get_object_or_404(Doctor, id=doctor_id)
+        patient = get_object_or_404(Patient, id=patient_id)
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        time_obj = datetime.strptime(time_str, '%H:%M').time()
 
+        # Vérifier si le créneau est encore disponible
+        if Appointment.objects.filter(doctor=doctor, date=date_obj, time=time_obj).exists():
+            return JsonResponse({'success': False, 'message': 'Ce créneau est déjà réservé.'})
+
+        # Création du rendez-vous
+        Appointment.objects.create(
+            patient=patient,
+            doctor=doctor,
+            date=date_obj,
+            time=time_obj,
+            reason=reason
+        )
+        
+        logger.info("Rendez-vous créé avec succès.")
+        return JsonResponse({'success': True, 'message': 'Rendez-vous enregistré avec succès'})
+
+    except (Doctor.DoesNotExist, Patient.DoesNotExist):
+        logger.error("Patient ou Médecin non trouvé.", exc_info=True)
+        return JsonResponse({'success': False, 'message': 'Patient ou Médecin invalide.'}, status=404)
+    except ValueError as e:
+        logger.error(f"Erreur de format de date ou d'heure: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': 'Format de date ou d\'heure invalide.'}, status=400)
+    except Exception as e:
+        logger.error(f"Erreur interne lors de la création du rendez-vous: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': 'Une erreur interne est survenue.'}, status=500)
+    
 @login_required
 def get_available_slots(request):
     doctor_id = request.GET.get('doctor_id')
@@ -590,6 +607,41 @@ def get_doctors_list(request):
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+    
+@login_required
+def get_doctor_availability_dates(request, doctor_id):
+    """
+    API: Renvoie une liste de dates disponibles pour un médecin donné
+    pour les 90 prochains jours.
+    """
+    try:
+        doctor = get_object_or_404(Doctor, id=doctor_id)
+        availability_data = doctor.availability or {}
+        
+        # Mappage des noms de jours français aux numéros de jour de la semaine de Python (lundi=0)
+        day_mapping = {
+            'Lundi': 0, 'Mardi': 1, 'Mercredi': 2, 'Jeudi': 3, 
+            'Vendredi': 4, 'Samedi': 5, 'Dimanche': 6
+        }
+        
+        # Obtenir les numéros des jours où le médecin travaille
+        available_weekdays = [day_mapping[day] for day in availability_data.keys() if day in day_mapping]
+        
+        if not available_weekdays:
+            return JsonResponse({'available_dates': []})
+
+        available_dates = []
+        today = date.today()
+        # On vérifie sur une période de 90 jours
+        for i in range(90):
+            current_date = today + timedelta(days=i)
+            if current_date.weekday() in available_weekdays:
+                available_dates.append(current_date.strftime('%Y-%m-%d'))
+                
+        return JsonResponse({'success': True, 'available_dates': available_dates})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
 @login_required
 def get_patient_data_for_edit(request, patient_id):

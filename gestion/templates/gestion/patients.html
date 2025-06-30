@@ -767,15 +767,80 @@
         </form>
     </div>
 </div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!-- Traduction française pour Flatpickr -->
+<script src="https://npmcdn.com/flatpickr/dist/l10n/fr.js"></script>
+
 <script>// Variables globales
 let isEditMode = false;
 let currentStep = 1;
+let flatpickrInstance;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM chargé - Initialisation du système de gestion des patients');
     
     // Initialisation des événements
     initializeEventListeners();
+     const doctorSelect = document.getElementById('appointment-doctor');
+    const dateInput = document.getElementById('appointment-date');
+    const timeSelect = document.getElementById('appointment-time');
+
+    // Initialisation de Flatpickr
+    if (dateInput) {
+        flatpickrInstance = flatpickr(dateInput, {
+            locale: "fr",
+            dateFormat: "Y-m-d",
+            minDate: "today",
+            onOpen: [function(selectedDates, dateStr, instance) {
+                if (!doctorSelect.value) {
+                    showNotification("Veuillez d'abord sélectionner un médecin.", "info");
+                    instance.close();
+                }
+            }],
+            onChange: function(selectedDates, dateStr, instance) {
+                if (dateStr) {
+                    updateAvailableSlots(); 
+                }
+            },
+        });
+        flatpickrInstance.set('disable', [function(date) { return true; }]);
+        dateInput.placeholder = "Sélectionner d'abord un médecin";
+    }
+
+    // Écouteur sur le changement de médecin
+    if (doctorSelect) {
+        doctorSelect.addEventListener('change', function() {
+            const doctorId = this.value;
+            flatpickrInstance.clear();
+            timeSelect.innerHTML = '<option value="">Sélectionner un créneau</option>';
+            
+            if (doctorId) {
+                dateInput.placeholder = "Chargement des dates...";
+                fetch(`/api/doctor/${doctorId}/availability-dates/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.available_dates.length > 0) {
+                            flatpickrInstance.set('enable', data.available_dates);
+                            dateInput.placeholder = "Choisir une date disponible";
+                        } else {
+                            flatpickrInstance.set('disable', [function(date) { return true; }]);
+                            dateInput.placeholder = "Aucune date disponible";
+                            showNotification("Ce médecin n'a pas de disponibilités.", "warning");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur de chargement des dates:', error);
+                        dateInput.placeholder = "Erreur de chargement";
+                    });
+            } else {
+                flatpickrInstance.set('disable', [function(date) { return true; }]);
+                dateInput.placeholder = "Sélectionner d'abord un médecin";
+            }
+        });
+    }
 });
 
 function initializeEventListeners() {
@@ -936,19 +1001,17 @@ function closeConsultationModal() {
     document.getElementById('consultation-modal').style.display = 'none';
     resetConsultationForm();
 }
-
 function openAppointmentModal(button) {
     const row = button.closest('tr');
+    // Récupérer l'ID du patient à partir de l'attribut data-patient-id de la ligne
     const patientId = row.getAttribute('data-patient-id');
-    
-    document.getElementById('appointment-modal').style.display = 'flex';
+
+    resetAppointmentForm(); 
+
     document.getElementById('appointment-patient-id').value = patientId;
     
-    // Définir la date minimum à aujourd'hui
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('appointment-date').min = today;
-    
-    resetAppointmentForm();
+    // Afficher la modale
+    document.getElementById('appointment-modal').style.display = 'flex';
 }
 
 function closeAppointmentModal() {
@@ -1243,6 +1306,17 @@ function resetAppointmentForm() {
     if (form) {
         form.reset();
         document.getElementById('appointment-patient-id').value = '';
+
+        // Vider les créneaux
+        document.getElementById('appointment-time').innerHTML = '<option value="">Sélectionner un créneau</option>';
+        
+        // Réinitialiser le calendrier flatpickr si il existe
+        if (flatpickrInstance) {
+            flatpickrInstance.clear(); // Vider la date sélectionnée
+            // Le désactiver complètement jusqu'à la sélection d'un médecin
+            flatpickrInstance.set('disable', [function(date) { return true; }]);
+            document.getElementById('appointment-date').placeholder = "Sélectionner d'abord un médecin";
+        }
     }
 }
 
@@ -1624,46 +1698,54 @@ const additionalStyles = `
 document.head.insertAdjacentHTML('beforeend', additionalStyles);
 
 // --- AJOUT: Gestion dynamique des créneaux disponibles ---
+
+function updateAvailableSlots() {
+    // On déclare les variables DANS la fonction pour qu'elle les trouve toujours
+    const doctorSelect = document.getElementById('appointment-doctor');
+    const dateInput = document.getElementById('appointment-date');
+    const timeSelect = document.getElementById('appointment-time');
+
+    const doctorId = doctorSelect.value;
+    const date = dateInput.value;
+    
+    timeSelect.innerHTML = '<option value="">Chargement...</option>';
+    timeSelect.disabled = true;
+    
+    if (doctorId && date) {
+        fetch(`/get-slots/?doctor_id=${doctorId}&date=${date}`)
+            .then(resp => {
+                if (!resp.ok) throw new Error("Erreur réseau");
+                return resp.json();
+            })
+            .then(data => {
+                timeSelect.innerHTML = '';
+                if (data.slots && data.slots.length > 0) {
+                    data.slots.forEach(slot => {
+                        const opt = document.createElement('option');
+                        opt.value = slot;
+                        opt.textContent = slot;
+                        timeSelect.appendChild(opt);
+                    });
+                    timeSelect.disabled = false;
+                } else {
+                    timeSelect.innerHTML = '<option value="">Aucun créneau disponible</option>';
+                }
+            })
+            .catch((error) => {
+                console.error("Erreur dans updateAvailableSlots:", error);
+                timeSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+            });
+    } else {
+        timeSelect.innerHTML = '<option value="">Sélectionner un créneau</option>';
+        timeSelect.disabled = true;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const doctorSelect = document.getElementById('appointment-doctor');
     const dateInput = document.getElementById('appointment-date');
     const timeSelect = document.getElementById('appointment-time');
 
-    function updateAvailableSlots() {
-        const doctorId = doctorSelect.value;
-        const date = dateInput.value;
-        timeSelect.innerHTML = '<option value="">Chargement...</option>';
-        if (doctorId && date) {
-            fetch(`/get-slots/?doctor_id=${doctorId}&date=${date}`)
-                .then(resp => resp.json())
-                .then(data => {
-                    timeSelect.innerHTML = '';
-                    if (data.slots && data.slots.length > 0) {
-                        data.slots.forEach(slot => {
-                            const opt = document.createElement('option');
-                            opt.value = slot;
-                            opt.textContent = slot;
-                            timeSelect.appendChild(opt);
-                        });
-                    } else {
-                        const opt = document.createElement('option');
-                        opt.value = '';
-                        opt.textContent = 'Aucun créneau disponible';
-                        timeSelect.appendChild(opt);
-                    }
-                })
-                .catch(() => {
-                    timeSelect.innerHTML = '<option value="">Erreur lors du chargement</option>';
-                });
-        } else {
-            timeSelect.innerHTML = '<option value="">Sélectionner un créneau</option>';
-        }
-    }
-
-    if (doctorSelect && dateInput) {
-        doctorSelect.addEventListener('change', updateAvailableSlots);
-        dateInput.addEventListener('change', updateAvailableSlots);
-    }
 });
 </script>
 {% endblock patients_content %}
