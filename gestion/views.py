@@ -173,24 +173,50 @@ def add_doctor(request):
 def add_appointment(request):
     if request.method == 'POST':
         try:
-            patient_id = request.POST.get('appointment-patient')
-            doctor_id = request.POST.get('appointment-doctor')
-            date_str = request.POST.get('appointment-date')
-            time_str = request.POST.get('time-slot')
+            # Accepte les deux formats de noms de champs (patients.html et appointments.html)
+            patient_id = (
+                request.POST.get('patient_id') or
+                request.POST.get('appointment-patient')
+            )
+            doctor_id = (
+                request.POST.get('doctor') or
+                request.POST.get('appointment-doctor')
+            )
+            date_str = (
+                request.POST.get('date') or
+                request.POST.get('appointment-date')
+            )
+            time_str = (
+                request.POST.get('time') or
+                request.POST.get('time-slot')
+            )
+            reason = (
+                request.POST.get('reason') or
+                request.POST.get('appointment-reason')
+            )
 
+            if not all([patient_id, doctor_id, date_str, time_str, reason]):
+                return JsonResponse({'success': False, 'message': 'Tous les champs sont requis.'})
+
+            doctor = Doctor.objects.get(id=doctor_id)
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
             time_obj = datetime.strptime(time_str, '%H:%M').time()
 
-            appointment = Appointment.objects.create(
+            # Vérifier si le créneau est encore disponible
+            if Appointment.objects.filter(doctor=doctor, date=date_obj, time=time_obj).exists():
+                return JsonResponse({'success': False, 'message': 'Ce créneau est déjà réservé.'})
+
+            Appointment.objects.create(
                 patient_id=patient_id,
-                doctor_id=doctor_id,
-                date=date_str,
+                doctor=doctor,
+                date=date_obj,
                 time=time_obj,
-                reason=request.POST.get('appointment-reason')
+                reason=reason
             )
-            return JsonResponse({'success': True, 'appointment_id': appointment.id})
+            return JsonResponse({'success': True})
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+            return JsonResponse({'success': False, 'message': str(e)})
+    return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
 
 @login_required
 def get_available_slots(request):
@@ -206,7 +232,7 @@ def get_available_slots(request):
         day_name = days_fr[weekday]
 
         availability = doctor.availability.get(day_name)
-        if not availability:
+        if not availability or not availability.get('start') or not availability.get('end'):
             return JsonResponse({'slots': []})
 
         start_time = datetime.strptime(availability['start'], '%H:%M').time()
@@ -217,13 +243,13 @@ def get_available_slots(request):
         end = datetime.combine(date_obj, end_time)
 
         while current < end:
+            # Créneau de 30 minutes
             if not Appointment.objects.filter(
                 doctor=doctor,
                 date=date_obj,
                 time=current.time()
             ).exists():
                 slots.append(current.strftime('%H:%M'))
-
             current += timedelta(minutes=30)
 
         return JsonResponse({'slots': slots})
@@ -606,4 +632,3 @@ def get_patient_details(request, patient_id):
     }
     return JsonResponse({'success': True, 'data': data})
 
-    

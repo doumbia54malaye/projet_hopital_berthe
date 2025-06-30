@@ -28,5 +28,6 @@ urlpatterns = [
     path('appointments/delete/<int:appointment_id>/', views.delete_appointment, name='delete_appointment'),
     path('appointments/get/<int:appointment_id>/', views.get_appointment_details, name='get_appointment_details'),
     path('appointments/update/<int:appointment_id>/', views.update_appointment, name='update_appointment'),
+    path('api/appointments/', views.add_appointment, name='api_add_appointment'),
 
 ]
